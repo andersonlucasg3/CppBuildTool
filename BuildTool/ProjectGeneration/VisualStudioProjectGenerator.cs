@@ -20,7 +20,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
     {
         DirectoryReference ProjectsDirectory = ProjectDirectories.Shared.CreateIntermediateProjectsDirectory();
 
-        string ProgramsDirectory = Path.Combine(Environment.CurrentDirectory, "Engine", "Programs");
+        string ProgramsDirectory = Path.Combine(Environment.CurrentDirectory, "Programs");
         FileReference[] CSharpProjects = [.. Directory.EnumerateFiles(ProgramsDirectory, "*.csproj", SearchOption.AllDirectories)];
 
         Dictionary<string, ModuleDefinition> Modules = new();
