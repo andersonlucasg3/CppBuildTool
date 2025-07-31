@@ -57,7 +57,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         SolutionProject[] CSharpProjects = [.. InCSharpProjectFiles.Select(File => new SolutionProject(File.NameWithoutExtension, File.RelativePath, _compileConfigurations, [ETargetPlatform.Any], ESolutionProjectKind.CSharpProject))];
         Array.ForEach(CSharpProjects, Project => NestedProjectsMap.Add(Project, ProgramsFolder));
 
-        SolutionProject EngineFolder = new("Engine Modules", "Engine Modules", [], [], ESolutionProjectKind.Folder);
+        SolutionProject EngineFolder = new("Modules", "Modules", [], [], ESolutionProjectKind.Folder);
         SolutionProject[] EngineProjects = [.. InModuleProjectFileMap.Select(KVPair => new SolutionProject(KVPair.Key.Name, KVPair.Value.RelativePath, _compileConfigurations, [InTargetPlatform.Platform]))];
         Array.ForEach(EngineProjects, Project => NestedProjectsMap.Add(Project, EngineFolder));
 
