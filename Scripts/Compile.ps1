@@ -34,7 +34,12 @@ param(
 
 . $PSScriptRoot/Commons.ps1
 
-CompileProjectTools
+CompileProjectTools -ProjectName $Project
+
+if (-not $?)
+{
+    return;
+}
 
 $Arguments = [List[string]]::new()
 
@@ -55,6 +60,6 @@ AddSwitch ([ref]$Arguments) "Recompile" $Recompile
 AddSwitch ([ref]$Arguments) "PrintCompileCommands" $PrintCompileCommands
 AddSwitch ([ref]$Arguments) "PrintLinkCommands" $PrintLinkCommands
 
-dotnet exec ./Engine/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+dotnet exec ./$Project/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
 
 Exit $LASTEXITCODE

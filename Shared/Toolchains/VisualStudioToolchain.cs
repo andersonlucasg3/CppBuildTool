@@ -15,7 +15,7 @@ public partial class VisualStudioToolchain : ClangToolchain
     private readonly string _vsToolchainRoot;
     private readonly string _clangPath;
 
-    private readonly WindowsCompiler _windowsCompiler = new();
+    private readonly WindowsCompiler _windowsCompiler;
 
     public VisualStudioToolchain()
     {
@@ -28,24 +28,13 @@ public partial class VisualStudioToolchain : ClangToolchain
 
         _vsToolchainRoot = GetVisualStudioToolchainPath(VSWherePath);
         _clangPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe");
+
+        _windowsCompiler = new(_clangPath);
     }
 
     public override string[] GetCompileCommandline(CompileCommandInfo InCompileCommandInfo)
     {
-        return [
-            _clangPath,
-            "/showIncludes",
-            "/c",
-            InCompileCommandInfo.TargetFile.PlatformPath,
-            $"/I{InCompileCommandInfo.SourcesDirectory.PlatformPath}",
-            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"/I{IncludeDirectory.PlatformPath}"),
-            $"/Fo{InCompileCommandInfo.ObjectFile.PlatformPath}",
-            "/std:c++20",
-            "/W4",
-            "/EHsc",
-            "/GR",
-            .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
-        ];
+        return _windowsCompiler.GetCompileCommandLine(InCompileCommandInfo);
     }
 
     public override ProcessResult Compile(CompileCommandInfo InCompileCommandInfo)
@@ -68,7 +57,7 @@ public partial class VisualStudioToolchain : ClangToolchain
 
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
-        throw new NotImplementedException();
+        return _windowsCompiler.GetLinkCommandLine(InLinkCommandInfo);
     }
 
     public override string GetBinaryTypeExtension(EModuleBinaryType BinaryType)
@@ -95,7 +84,7 @@ public partial class VisualStudioToolchain : ClangToolchain
 
     public override string GetObjectFileExtension(FileReference InSourceFile)
     {
-        return ".obj";
+        return _windowsCompiler.GetObjectFileExtension();
     }
 
 
@@ -129,16 +118,6 @@ public partial class VisualStudioToolchain : ClangToolchain
 
         OutVSWherePath = Path.Combine(ProgramFilesX86, "Microsoft Visual Studio", "Installer", "vswhere.exe");
         return File.Exists(OutVSWherePath);
-    }
-
-    private static string[] GetOptimizationArguments(ECompileConfiguration InConfiguration)
-    {
-        return InConfiguration switch
-        {
-            ECompileConfiguration.Debug => ["/DDEBUG", "/Zi"],
-            ECompileConfiguration.Release => ["/flto", "/O3", "/DNDEBUG"],
-            _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null)
-        };
     }
 
     [GeneratedRegex("file:\\s+([a-zA-Z0-9:\\s+\\\\.\\/\\(\\)_]+)")]

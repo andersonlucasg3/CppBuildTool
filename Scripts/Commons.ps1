@@ -36,10 +36,15 @@ function AddSwitch()
 
 function CompileProjectTools 
 {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $ProjectName
+    )
+    
     Write-Host "Compiling bundled BuildTool"
 
     $ProjectToolsSolution = "$(Get-Location)/Programs/DotNet/ProjectTools/ProjectTools.sln"
-    $ProjectToolsOutput = "$(Get-Location)/Engine/Binaries/DotNet/ProjectTools"
+    $ProjectToolsOutput = "$(Get-Location)/$ProjectName/Binaries/DotNet/ProjectTools"
     
     $Output = dotnet build $ProjectToolsSolution -c Debug -o $ProjectToolsOutput | Out-String
 

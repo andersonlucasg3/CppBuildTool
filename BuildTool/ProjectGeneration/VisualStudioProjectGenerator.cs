@@ -23,7 +23,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         string ProgramsDirectory = Path.Combine(Environment.CurrentDirectory, "Programs");
         FileReference[] CSharpProjects = [.. Directory.EnumerateFiles(ProgramsDirectory, "*.csproj", SearchOption.AllDirectories)];
 
-        Dictionary<string, ModuleDefinition> Modules = new();
+        Dictionary<string, ModuleDefinition> Modules = [];
         Modules.AddFrom(InProjectDefinition.GetModules(ETargetPlatform.Any), InProjectDefinition.GetModules(InTargetPlatform.Platform));
 
         Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap = 
@@ -57,13 +57,13 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         SolutionProject[] CSharpProjects = [.. InCSharpProjectFiles.Select(File => new SolutionProject(File.NameWithoutExtension, File.RelativePath, _compileConfigurations, [ETargetPlatform.Any], ESolutionProjectKind.CSharpProject))];
         Array.ForEach(CSharpProjects, Project => NestedProjectsMap.Add(Project, ProgramsFolder));
 
-        SolutionProject EngineFolder = new("Modules", "Modules", [], [], ESolutionProjectKind.Folder);
-        SolutionProject[] EngineProjects = [.. InModuleProjectFileMap.Select(KVPair => new SolutionProject(KVPair.Key.Name, KVPair.Value.RelativePath, _compileConfigurations, [InTargetPlatform.Platform]))];
-        Array.ForEach(EngineProjects, Project => NestedProjectsMap.Add(Project, EngineFolder));
+        SolutionProject ModulesFolder = new("Modules", "Modules", [], [], ESolutionProjectKind.Folder);
+        SolutionProject[] ModulesProjects = [.. InModuleProjectFileMap.Select(KVPair => new SolutionProject(KVPair.Key.Name, KVPair.Value.RelativePath, _compileConfigurations, [InTargetPlatform.Platform]))];
+        Array.ForEach(ModulesProjects, Project => NestedProjectsMap.Add(Project, ModulesFolder));
 
         SolutionProject[] Projects = [
-            EngineFolder,
-            .. EngineProjects,
+            ModulesFolder,
+            .. ModulesProjects,
             ProgramsFolder,
             .. CSharpProjects,
         ];
@@ -84,7 +84,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         DirectoryReference[] DependenciesSourcesDirectories = [.. InModuleDependencies.Select(Dependency => Dependency.SourcesDirectory)];
 
         Project Project = new(new ProjectDependencies
-            {
+        {
                 ProjectName = InProjectName,
                 Project = InProject,
                 Dependencies = Dependencies,
@@ -94,8 +94,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
                 SourcesCollection = InModule.Sources!,
                 ProjectSourcesDirectory = InModule.SourcesDirectory,
                 DependenciesSourcesDirectories = DependenciesSourcesDirectories,
-        }
-        );
+        });
 
         Project.Build(StringBuilder);
 

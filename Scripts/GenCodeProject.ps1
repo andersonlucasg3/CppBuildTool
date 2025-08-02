@@ -34,7 +34,12 @@ param(
 
 . $PSScriptRoot/Commons.ps1
 
-CompileProjectTools
+CompileProjectTools -ProjectName $Project
+
+if (-not $?)
+{
+    return
+}
 
 $Arguments = [List[string]]::new()
 $Arguments.Add("GenCodeProject")
@@ -46,6 +51,6 @@ AddArgument ([ref]$Arguments) "Platform" $Platform
 AddArgument ([ref]$Arguments) "Configuration" $Configuration
 AddSwitch ([ref]$Arguments) "DisableMT" $true
 
-dotnet exec ./Engine/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+dotnet exec ./$Project/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
 
 Exit $LASTEXITCODE
