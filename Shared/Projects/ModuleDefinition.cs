@@ -143,12 +143,12 @@ public abstract class ModuleDefinition : Definition
 
         if (string.IsNullOrEmpty(InValue))
         {
-            CompilerDefinitionSet.Add($"D{InDefine.ToUpper()}");
+            CompilerDefinitionSet.Add(InDefine.ToUpper());
 
             return;
         }
 
-        CompilerDefinitionSet.Add($"D{InDefine.ToUpper()}={InValue}");
+        CompilerDefinitionSet.Add($"{InDefine.ToUpper()}={InValue}");
     }
 
     protected void AddLinkWithLibrary(ETargetPlatform InTargetPlatform, params string[] InLibraries)

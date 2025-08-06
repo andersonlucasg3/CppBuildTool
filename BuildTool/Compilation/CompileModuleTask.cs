@@ -5,6 +5,7 @@ using Shared.Processes;
 using Shared.Projects;
 using Shared.Sources;
 using Shared.Toolchains;
+using Shared.Toolchains.Compilers;
 
 namespace BuildTool.Compilation;
 
@@ -39,11 +40,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
                 .. InInfo.Module.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory)
             ];
 
-            string[] CompilerDefinitions = [
-                .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(InInfo.Module, InTargetPlatform.Platform),
-                .. InInfo.Module.GetCompilerDefinitions(ETargetPlatform.Any),
-                .. InInfo.Module.GetCompilerDefinitions(InTargetPlatform.Platform)
-            ];
+            string[] CompilerDefinitions = CompilerDefinitionsProvider.GetAutomaticCompilerDefinitions(InTargetPlatform, InConfiguration, InInfo.Module);
 
             CompileCommandInfo CompileCommandInfo = new()
             {

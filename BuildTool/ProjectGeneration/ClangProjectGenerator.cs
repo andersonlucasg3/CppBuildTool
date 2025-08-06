@@ -7,6 +7,7 @@ using Shared.Platforms;
 using Shared.Processes;
 using Shared.Projects;
 using Shared.Toolchains;
+using Shared.Toolchains.Compilers;
 
 namespace BuildTool.ProjectGeneration;
 
@@ -48,11 +49,7 @@ public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform
                     .. Module.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory)
                 ];
 
-                string[] CompilerDefinitions = [
-                    .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(Module, InTargetPlatform.Platform),
-                    .. Module.GetCompilerDefinitions(ETargetPlatform.Any),
-                    .. Module.GetCompilerDefinitions(InTargetPlatform.Platform)
-                ];
+                string[] CompilerDefinitions = CompilerDefinitionsProvider.GetAutomaticCompilerDefinitions(InTargetPlatform, InConfiguration, Module);
                 
                 CompileCommandInfo CompileCommandInfo = new()
                 {

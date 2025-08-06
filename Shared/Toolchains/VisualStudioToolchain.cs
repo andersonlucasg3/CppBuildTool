@@ -9,6 +9,7 @@ using Processes;
 using Projects;
 using Compilers.Windows;
 using Platforms;
+using Shared.Extensions;
 
 public partial class VisualStudioToolchain : ClangToolchain
 {
@@ -28,8 +29,8 @@ public partial class VisualStudioToolchain : ClangToolchain
         }
 
         _vsToolchainRoot = GetVisualStudioToolchainPath(VSWherePath);
-        _clangPath = $"\"{Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe")}\"";
-        _linkPath = $"\"{Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "lld-link.exe")}\"";
+        _clangPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe").Quoted();
+        _linkPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "lld-link.exe").Quoted();
 
         _windowsCompiler = new(_clangPath, _linkPath);
     }
@@ -93,7 +94,7 @@ public partial class VisualStudioToolchain : ClangToolchain
     {
         List<string> CompilerDefinitions = [];
 
-        CompilerDefinitions.Add($"D\"{InModule.Name.ToUpper()}_API=__declspec(dllexport)\"");
+        CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=__declspec(dllexport)".Quoted());
 
         ModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
@@ -102,7 +103,7 @@ public partial class VisualStudioToolchain : ClangToolchain
 
         foreach (ModuleDefinition Dependency in Dependencies)
         {
-            CompilerDefinitions.Add($"D\"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)\"");
+            CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)".Quoted());
         }
 
         return [.. CompilerDefinitions];

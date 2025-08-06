@@ -1,4 +1,5 @@
 using Shared.Compilation;
+using Shared.Extensions;
 using Shared.Projects;
 
 namespace Shared.Toolchains.Compilers.Windows;
@@ -22,7 +23,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : CppCompile
             "/W4",
             "/EHsc",
             "/GR",
-            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"/{Define}"),
+            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"/D{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
         ];
     }
@@ -31,9 +32,9 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : CppCompile
     {
         return [
             _linkPath,
-            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => $"\"{ObjectFile.PlatformPath}\""),
+            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath.Quoted()),
             GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
-            $"/OUT:\"{InLinkCommandInfo.LinkedFile.PlatformPath}\"",
+            $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath.Quoted()}",
             .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}")
         ];
     }

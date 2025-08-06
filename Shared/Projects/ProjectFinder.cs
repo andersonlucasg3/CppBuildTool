@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Diagnostics;
 
 namespace Shared.Projects;
 
@@ -18,16 +19,33 @@ public static class ProjectFinder
     {
         DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpProjects");
 
+        bool bSpawnNewProcess = !IntermediateProjectsDirectory.bExists || IntermediateProjectsDirectory.EnumerateFiles("*.dll", SearchOption.TopDirectoryOnly).Length == 0;
+
         FileReference InCSharpProjectFile = InProjectRootDirectory.CombineFile(InProjectName, $"{InProjectName}.csproj");
 
         ProcessResult ProcessResult = ProcessExecutorExtension.Run([
-            "dotnet", 
-            "build", $"{InCSharpProjectFile.PlatformPath}", 
-            "-c", "Debug", 
+            "dotnet",
+            "build", $"{InCSharpProjectFile.PlatformPath}",
+            "-c", "Debug",
             "-o", $"{IntermediateProjectsDirectory.PlatformPath}",
         ], true);
 
         if (!ProcessResult.bSuccess) throw new CSharpProjectCompilationException(ProcessResult.StandardOutput);
+
+        // For some reason, on windows when running compile for the first time
+        // the load projects function won't find the output dlls
+        // I fixed it by spawning a new process with the same arguments
+        if (bSpawnNewProcess)
+        {
+            Process.Start(new ProcessStartInfo()
+            {
+                FileName = Process.GetCurrentProcess().MainModule?.FileName,
+                Arguments = Environment.CommandLine.TrimStart(),
+                UseShellExecute = false
+            });
+
+            Environment.Exit(0);
+        }
     }
 
     public static void LoadProjects(DirectoryReference InProjectRootDirectory, string InProjectName)

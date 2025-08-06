@@ -2,8 +2,5 @@
 
 public static class StringExtensions
 {
-    public static string Quoted(this string InValue)
-    {
-        return $""""{InValue}"""";
-    }
+    public static string Quoted(this string InValue) => $"\"{InValue}\"";
 }

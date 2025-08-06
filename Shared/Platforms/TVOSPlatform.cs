@@ -2,10 +2,7 @@ using Shared.Toolchains;
 
 namespace Shared.Platforms;
 
-public class TVOSPlatform : IOSPlatform
+public class TVOSPlatform(XcodeToolchain InToolchain) : IOSPlatform(InToolchain)
 {
-    public TVOSPlatform(XcodeToolchain InToolchain) : base(InToolchain)
-    {
-        
-    }
+    public override ETargetPlatform Platform => ETargetPlatform.tvOS;
 }
