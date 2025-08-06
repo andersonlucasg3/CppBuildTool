@@ -92,6 +92,25 @@ public class XcodeToolchain : ClangToolchain
         };
     }
 
+    public override string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform)
+    {
+        List<string> CompilerDefinitions = [];
+
+        CompilerDefinitions.Add($"D{InModule.Name.ToUpper()}_API");
+
+        ModuleDefinition[] Dependencies = [
+            .. InModule.GetDependencies(ETargetPlatform.Any),
+            .. InModule.GetDependencies(InTargetPlatform)
+        ];
+
+        foreach (ModuleDefinition Dependency in Dependencies)
+        {
+            CompilerDefinitions.Add($"D{Dependency.Name.ToUpper()}_API");
+        }
+
+        return [.. CompilerDefinitions];
+    }
+
     public void PrintToolchain()
     {
         Console.WriteLine($"Using Xcode Toolchain. Sdk version {SdkVersion}");
@@ -118,4 +137,3 @@ public class XcodeToolchain : ClangToolchain
 
 public class XcodeNotInstalledException : BaseException;
 public class SourceFileExtensionNotSupportedException(string InMessage) : BaseException(InMessage);
-

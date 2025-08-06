@@ -16,6 +16,8 @@ public abstract class ModuleDefinition : Definition
 
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _headerSearchPathPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<ModuleDefinition>> _dependenciesPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, HashSet<string>> _compilerDefinitionsPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, HashSet<string>> _linkWithLibrariesPerPlatform = [];
 
     private readonly List<string> _librarySearchPaths = [];
     private ISourceCollection? _sources = null;
@@ -30,7 +32,7 @@ public abstract class ModuleDefinition : Definition
     public abstract EModuleBinaryType BinaryType { get; }
 
     public ProjectDefinition OwnerProject => _ownerProject!;
-    
+
     public IReadOnlyList<string> LibrarySearchPaths => _librarySearchPaths;
     public IReadOnlyList<DirectoryReference> CopyResourcesDirectories => _copyResourcesDirectories;
 
@@ -58,6 +60,26 @@ public abstract class ModuleDefinition : Definition
         }
 
         return SearchPathsSet;
+    }
+
+    public IReadOnlySet<string> GetCompilerDefinitions(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    {
+        if (!_compilerDefinitionsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? CompilerDefinitionsSet))
+        {
+            return new HashSet<string>();
+        }
+
+        return CompilerDefinitionsSet;
+    }
+
+    public IReadOnlySet<string> GetLinkWithLibraries(ETargetPlatform InTargetPlatform)
+    {
+        if (!_linkWithLibrariesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? LinkWithLibrariesSet))
+        {
+            return new HashSet<string>();
+        }
+
+        return LinkWithLibrariesSet;
     }
 
     protected void AddDependencyModuleNames(params string[] InModuleNames)
@@ -103,6 +125,43 @@ public abstract class ModuleDefinition : Definition
         {
             DirectoryReference SearchPath = OwnerProject.SourcesDirectory.Combine(HeaderSearchPath);
             SearchPathsSet.Add(SearchPath.PlatformRelativePath);
+        }
+    }
+
+    protected void AddCompilerDefinition(string InDefine, string? InValue = null)
+    {
+        AddCompilerDefinition(ETargetPlatform.Any, InDefine, InValue);
+    }
+
+    protected void AddCompilerDefinition(ETargetPlatform InTargetPlatform, string InDefine, string? InValue = null)
+    {
+        if (!_compilerDefinitionsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? CompilerDefinitionSet))
+        {
+            CompilerDefinitionSet = [];
+            _compilerDefinitionsPerPlatform.Add(InTargetPlatform, CompilerDefinitionSet);
+        }
+
+        if (string.IsNullOrEmpty(InValue))
+        {
+            CompilerDefinitionSet.Add($"D{InDefine.ToUpper()}");
+
+            return;
+        }
+
+        CompilerDefinitionSet.Add($"D{InDefine.ToUpper()}={InValue}");
+    }
+
+    protected void AddLinkWithLibrary(ETargetPlatform InTargetPlatform, params string[] InLibraries)
+    {
+        if (!_linkWithLibrariesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? LinkWithLibrariesSet))
+        {
+            LinkWithLibrariesSet = [];
+            _linkWithLibrariesPerPlatform.Add(InTargetPlatform, LinkWithLibrariesSet);
+        }
+
+        foreach (string Library in InLibraries)
+        {
+            LinkWithLibrariesSet.Add(Library);
         }
     }
 

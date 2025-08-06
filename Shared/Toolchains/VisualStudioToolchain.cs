@@ -14,6 +14,7 @@ public partial class VisualStudioToolchain : ClangToolchain
 {
     private readonly string _vsToolchainRoot;
     private readonly string _clangPath;
+    private readonly string _linkPath;
 
     private readonly WindowsCompiler _windowsCompiler;
 
@@ -27,9 +28,10 @@ public partial class VisualStudioToolchain : ClangToolchain
         }
 
         _vsToolchainRoot = GetVisualStudioToolchainPath(VSWherePath);
-        _clangPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe");
+        _clangPath = $"\"{Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe")}\"";
+        _linkPath = $"\"{Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "lld-link.exe")}\"";
 
-        _windowsCompiler = new(_clangPath);
+        _windowsCompiler = new(_clangPath, _linkPath);
     }
 
     public override string[] GetCompileCommandline(CompileCommandInfo InCompileCommandInfo)
@@ -87,17 +89,35 @@ public partial class VisualStudioToolchain : ClangToolchain
         return _windowsCompiler.GetObjectFileExtension();
     }
 
+    public override string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform)
+    {
+        List<string> CompilerDefinitions = [];
+
+        CompilerDefinitions.Add($"D\"{InModule.Name.ToUpper()}_API=__declspec(dllexport)\"");
+
+        ModuleDefinition[] Dependencies = [
+            .. InModule.GetDependencies(ETargetPlatform.Any),
+            .. InModule.GetDependencies(InTargetPlatform)
+        ];
+
+        foreach (ModuleDefinition Dependency in Dependencies)
+        {
+            CompilerDefinitions.Add($"D\"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)\"");
+        }
+
+        return [.. CompilerDefinitions];
+    }
 
     private string GetVisualStudioToolchainPath(string InVSWherePath)
     {
         ProcessResult Result = this.Run([
-            InVSWherePath, 
-            "-latest", 
-            "-products", 
-            "*", 
-            "-requires", 
-            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", 
-            "-property", 
+            InVSWherePath,
+            "-latest",
+            "-products",
+            "*",
+            "-requires",
+            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property",
             "installationPath"
         ]);
 

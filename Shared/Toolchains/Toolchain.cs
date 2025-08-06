@@ -16,6 +16,7 @@ public struct CompileCommandInfo
     public required DirectoryReference[] HeaderSearchPaths;
     public required ECompileConfiguration Configuration;
     public required ETargetPlatform TargetPlatform;
+    public required string[] CompilerDefinitions;
 }
 
 public struct LinkCommandInfo
@@ -26,6 +27,7 @@ public struct LinkCommandInfo
     public required FileReference[] ObjectFiles;
     public required DirectoryReference[] LibrarySearchPaths;
     public required ETargetPlatform TargetPlatform;
+    public required string[] LinkWithLibraries;
 }
 
 public interface IToolchain
@@ -35,6 +37,8 @@ public interface IToolchain
     public string GetBinaryTypeExtension(EModuleBinaryType BinaryType);
     public string GetBinaryTypePrefix(EModuleBinaryType BinaryType);
     public string GetObjectFileExtension(FileReference InSourceFile);
+
+    public string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform);
 
     public ProcessResult Compile(CompileCommandInfo InCompileCommandInfo);
     public ProcessResult Link(LinkCommandInfo InLinkCommandInfo);

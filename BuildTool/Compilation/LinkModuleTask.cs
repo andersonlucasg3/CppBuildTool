@@ -63,6 +63,8 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, I
             _compileDirectories.CreateBaseConfigurationDirectory(ECompileBaseDirectory.Binaries),
             .. InInfo.Module.LibrarySearchPaths
         ];
+
+        string[] LinkWithLibraries = [.. InInfo.Module.GetLinkWithLibraries(InTargetPlatform.Platform)];
         
         LinkCommandInfo LinkCommandInfo = new()
         {
@@ -72,7 +74,7 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, I
             LibrarySearchPaths = LibrarySearchPaths,
             ObjectFiles = ObjectFiles,
             TargetPlatform = InTargetPlatform.Platform,
-
+            LinkWithLibraries = LinkWithLibraries
         };
         
         lock (InThreadSafeLock)

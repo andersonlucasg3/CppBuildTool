@@ -47,6 +47,12 @@ public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform
                     .. Module.GetDependencies(ETargetPlatform.Any).Select(DependencyModule => DependencyModule.SourcesDirectory),
                     .. Module.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory)
                 ];
+
+                string[] CompilerDefinitions = [
+                    .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(Module, InTargetPlatform.Platform),
+                    .. Module.GetCompilerDefinitions(ETargetPlatform.Any),
+                    .. Module.GetCompilerDefinitions(InTargetPlatform.Platform)
+                ];
                 
                 CompileCommandInfo CompileCommandInfo = new()
                 {
@@ -58,6 +64,7 @@ public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform
                     HeaderSearchPaths = HeaderSearchPaths,
                     Configuration = InConfiguration,
                     TargetPlatform = InTargetPlatform.Platform,
+                    CompilerDefinitions = CompilerDefinitions
                 };
                 
                 string[] CompileCommandline = [.. InTargetPlatform.Toolchain.GetCompileCommandline(CompileCommandInfo)];

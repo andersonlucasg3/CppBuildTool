@@ -39,6 +39,12 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
                 .. InInfo.Module.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory)
             ];
 
+            string[] CompilerDefinitions = [
+                .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(InInfo.Module, InTargetPlatform.Platform),
+                .. InInfo.Module.GetCompilerDefinitions(ETargetPlatform.Any),
+                .. InInfo.Module.GetCompilerDefinitions(InTargetPlatform.Platform)
+            ];
+
             CompileCommandInfo CompileCommandInfo = new()
             {
                 Module = InInfo.Module,
@@ -49,6 +55,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
                 HeaderSearchPaths = HeaderSearchPaths,
                 Configuration = InConfiguration,
                 TargetPlatform = InTargetPlatform.Platform,
+                CompilerDefinitions = CompilerDefinitions
             };
 
             lock (InThreadSafeLock)

@@ -1,10 +1,12 @@
 using Shared.Compilation;
+using Shared.Projects;
 
 namespace Shared.Toolchains.Compilers.Windows;
 
-public class WindowsCompiler(string InClangPath) : CppCompiler
+public class WindowsCompiler(string InClangPath, string InLinkPath) : CppCompiler
 {
     private readonly string _clangPath = InClangPath;
+    private readonly string _linkPath = InLinkPath;
 
     public override string[] GetCompileCommandLine(CompileCommandInfo InCompileCommandInfo)
     {
@@ -20,6 +22,7 @@ public class WindowsCompiler(string InClangPath) : CppCompiler
             "/W4",
             "/EHsc",
             "/GR",
+            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"/{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
         ];
     }
@@ -27,11 +30,11 @@ public class WindowsCompiler(string InClangPath) : CppCompiler
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
         return [
-            _clangPath,
-            "/LD",
-            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath),
-            "/link",
-            $"/OUT:{InLinkCommandInfo.LinkedFile.Name}"
+            _linkPath,
+            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => $"\"{ObjectFile.PlatformPath}\""),
+            GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
+            $"/OUT:\"{InLinkCommandInfo.LinkedFile.PlatformPath}\"",
+            .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}")
         ];
     }
 
@@ -47,6 +50,18 @@ public class WindowsCompiler(string InClangPath) : CppCompiler
             ECompileConfiguration.Debug => ["/DDEBUG", "/Zi"],
             ECompileConfiguration.Release => ["/flto", "/O3", "/DNDEBUG"],
             _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null)
+        };
+    }
+
+    private static string GetLinkArgumentForBinaryType(EModuleBinaryType InBinaryType)
+    {
+        return InBinaryType switch
+        {
+            EModuleBinaryType.Application => "/EXE",
+            EModuleBinaryType.StaticLibrary => throw new NotSupportedException($"{InBinaryType}"),
+            EModuleBinaryType.DynamicLibrary => "/DLL",
+            EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException($"{InBinaryType}"),
+            _ => throw new ArgumentOutOfRangeException(nameof(InBinaryType), InBinaryType, null),
         };
     }
 }

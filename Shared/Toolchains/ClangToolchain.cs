@@ -14,6 +14,7 @@ public abstract class ClangToolchain : IToolchain
     public abstract string[] GetCompileCommandline(CompileCommandInfo InCompileCommandInfo);
     public abstract string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo);
     public abstract string GetObjectFileExtension(FileReference InSourceFile);
+    public abstract string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform);
 
     public virtual ProcessResult Compile(CompileCommandInfo InCompileCommandInfo)
     {
