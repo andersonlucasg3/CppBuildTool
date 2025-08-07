@@ -201,6 +201,8 @@ public abstract class ModuleDefinition : Definition
         RootDirectory = InRootDirectory.Combine(Name);
         SourcesDirectory = RootDirectory.Combine(SourcesRoot);
 
+        Console.WriteLine($"Gathering sources for module {Name} with root {SourcesDirectory.PlatformPath}");
+
         _sources = CreateSources();
         Sources.GatherSourceFiles(SourcesDirectory);
 
