@@ -3,6 +3,8 @@ namespace Shared.Toolchains.Compilers;
 using Platforms;
 using Projects;
 using Shared.Compilation;
+using Shared.Extensions;
+
 
 public static class CompilerDefinitionsProvider
 {
@@ -53,7 +55,7 @@ public static class CompilerDefinitionsProvider
 
             if (Value == 1)
             {
-                PlatformDefinitions.Add($"PLATFORM_NAME={TargetPlatform}");
+                PlatformDefinitions.Add($"PLATFORM_NAME={TargetPlatform.ToSourcePlatformName()}");
             }
         }
 

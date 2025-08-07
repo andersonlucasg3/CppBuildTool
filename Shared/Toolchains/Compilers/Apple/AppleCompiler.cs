@@ -30,7 +30,7 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : CppC
             "-fno-objc-exceptions",
             "-Wall",
             "-Wextra",
-            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-{Define}"),.. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"/{Define}"),
+            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-D{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
             InTargetOSVersionMin,
             "-isysroot",

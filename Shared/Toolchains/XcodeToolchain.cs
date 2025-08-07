@@ -96,7 +96,7 @@ public class XcodeToolchain : ClangToolchain
     {
         List<string> CompilerDefinitions = [];
 
-        CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API");
+        CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=");
 
         ModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
@@ -105,7 +105,7 @@ public class XcodeToolchain : ClangToolchain
 
         foreach (ModuleDefinition Dependency in Dependencies)
         {
-            CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API");
+            CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=");
         }
 
         return [.. CompilerDefinitions];

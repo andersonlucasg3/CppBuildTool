@@ -18,4 +18,18 @@ public static class TargetPlatformExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(InTargetPlatform), InTargetPlatform, null),
         };
     }
+
+    public static string ToSourcePlatformName(this ETargetPlatform InTargetPlatform)
+    {
+        return InTargetPlatform switch
+        {
+            ETargetPlatform.iOS => "IOS",
+            ETargetPlatform.tvOS => "TVOS",
+            ETargetPlatform.visionOS => "VisionOS",
+            ETargetPlatform.macOS => "Mac",
+            ETargetPlatform.Android => "Android",
+            ETargetPlatform.Windows => "Windows",
+            _ => throw new ArgumentOutOfRangeException(nameof(InTargetPlatform), InTargetPlatform, null),
+        };
+    }
 }
