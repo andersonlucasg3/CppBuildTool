@@ -2,6 +2,8 @@ namespace Shared.Sources;
 
 using IO;
 using Processes;
+using Shared.Platforms;
+
 
 public class MetalShaderSourceCollection : ISourceCollection
 {
@@ -18,7 +20,7 @@ public class MetalShaderSourceCollection : ISourceCollection
 
     public FileReference[] AllFiles { get; private set; } = [];
 
-    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory)
+    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory, ETargetPlatform _)
     {
         AllFiles = SourceFiles = InSourceRootDirectory.EnumerateFiles("*.metal", SearchOption.AllDirectories);
     }

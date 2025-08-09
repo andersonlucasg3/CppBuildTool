@@ -8,6 +8,8 @@ using Shared.Extensions;
 using Shared.Processes;
 using Shared.IO;
 using BuildTool.Resources;
+using Shared.Sources;
+using System.Reflection;
 
 namespace BuildTool.Compilation.Commands;
 
@@ -93,7 +95,7 @@ public class Compile : IExecutableCommand
             SelectedModules = [.. AllModules.Where(Each => Modules.Contains(Each.Name))];
             Console.WriteLine($"Compiling specified modules: {string.Join(", ", Modules)}");
         }
-        
+
         Console.WriteLine($"Compiling on {HostPlatform.Name} platform targeting {TargetPlatform.Name}");
 
         Dictionary<ModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap = AllModules.ToDictionary(

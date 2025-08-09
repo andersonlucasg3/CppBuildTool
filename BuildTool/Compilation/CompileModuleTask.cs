@@ -13,7 +13,11 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
 {
     public void Compile(bool bPrintCompileCommands)
     {
-        CompileAction[] SourceCompileActions = GenerateCompileActions(InTargetPlatform.Toolchain, InInfo.Module.Sources!, out InInfo.CompileActions);
+        ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InInfo.Module.BinaryType);
+
+        SourceCollection.GatherSourceFiles(InInfo.Module.SourcesDirectory, InTargetPlatform.Platform);
+
+        CompileAction[] SourceCompileActions = GenerateCompileActions(InTargetPlatform.Toolchain, SourceCollection, out InInfo.CompileActions);
         
         if (SourceCompileActions.Length == 0)
         {
@@ -107,7 +111,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
         List<CompileAction> FullCompileActionsList = [];
         List<CompileAction> FilteredCompileActionList = [];
         
-        Parallelization.ForEach(InInfo.Module.Sources?.SourceFiles ?? [], SourceFile =>
+        Parallelization.ForEach(InSourceCollection.SourceFiles, SourceFile =>
         {
             CompileAction SourceCompileAction = new(SourceFile, ObjectsDirectory, InToolchain, InSourceCollection);
 

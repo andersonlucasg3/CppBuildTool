@@ -20,7 +20,6 @@ public abstract class ModuleDefinition : Definition
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _linkWithLibrariesPerPlatform = [];
 
     private readonly List<string> _librarySearchPaths = [];
-    private ISourceCollection? _sources = null;
 
     private readonly List<DirectoryReference> _copyResourcesDirectories = [];
 
@@ -35,8 +34,6 @@ public abstract class ModuleDefinition : Definition
 
     public IReadOnlyList<string> LibrarySearchPaths => _librarySearchPaths;
     public IReadOnlyList<DirectoryReference> CopyResourcesDirectories => _copyResourcesDirectories;
-
-    public ISourceCollection Sources => _sources!;
 
     public PlatformSpecifics PlatformSpecifics { get; } = new();
 
@@ -201,38 +198,7 @@ public abstract class ModuleDefinition : Definition
         RootDirectory = InRootDirectory.Combine(Name);
         SourcesDirectory = RootDirectory.Combine(SourcesRoot);
 
-        Console.WriteLine($"Gathering sources for module {Name} with root {SourcesDirectory.PlatformPath}");
-
-        _sources = CreateSources();
-        Sources.GatherSourceFiles(SourcesDirectory);
-
         Configure(InOwnerProject);
-    }
-
-    // TODO: review this in the future, there may be a better way to do this
-    private ISourceCollection CreateSources()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return BinaryType switch
-            {
-                EModuleBinaryType.ShaderLibrary => new MetalShaderSourceCollection(),
-                _ => new AppleSourceCollection(),
-            };
-        } 
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return BinaryType switch
-            {
-                // TODO: review this in the future if I want to support shader libraries on Windows
-                EModuleBinaryType.ShaderLibrary => 
-                    throw new ShaderLibraryNotSupportedOnPlatformException("EModuleBinaryType.ShaderLibrary not supported on Windows"),
-
-                _ => new WindowsSourceCollection(),
-            };
-        }
-
-        throw new PlatformNotSupportedException();
     }
 }
 

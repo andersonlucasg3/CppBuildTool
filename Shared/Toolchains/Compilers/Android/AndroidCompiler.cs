@@ -1,19 +1,96 @@
-namespace Shared.Toolchains.Compilers;
+namespace Shared.Toolchains.Compilers.Android;
 
-public class AndroidCompiler : CppCompiler
+using IO;
+using Projects;
+using Compilation;
+
+
+public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCompiler
 {
+    private readonly FileReference _clangCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang");
+    private readonly FileReference _clangPlusPlusCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang++");
+
     public override string[] GetCompileCommandLine(CompileCommandInfo InCompileCommandInfo)
     {
-        throw new NotImplementedException();
+        return [
+            GetClangBySourceExtension(InCompileCommandInfo.TargetFile.Extension),
+            "-MMD",
+            "-MF",
+            InCompileCommandInfo.DependencyFile.PlatformPath,
+            "-c",
+            InCompileCommandInfo.TargetFile.PlatformPath,
+            "-o",
+            InCompileCommandInfo.ObjectFile.PlatformPath,
+            .. GetSystemIncludePaths().Select(Path => $"-I{Path.PlatformPath}"),
+            $"-I{InCompileCommandInfo.SourcesDirectory.PlatformPath}",
+            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory.PlatformPath}"),
+            "-fPIC",
+            $"-std={CppStandard}",
+            "-stdlib=libc++",
+            "-Wall",
+            "-Wextra",
+            "-target", "aarch64-none-linux-android21",
+            $"--sysroot={InPrebuiltPlatformRoot.Combine("sysroot").PlatformPath}",
+            .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-D{Define}"),
+            .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
+        ];
     }
 
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
-        throw new NotImplementedException();
+        return [
+            _clangPlusPlusCompiler.PlatformPath,
+            GetClangBinaryTypeArgument(InLinkCommandInfo.Module.BinaryType),
+            string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath)),
+            "-o",
+            InLinkCommandInfo.LinkedFile.PlatformPath,
+            .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"),
+            .. InLinkCommandInfo.Module.GetDependencies().Select(Dependency => $"-l{Dependency.Name}"),
+        ];
     }
 
     public override string GetObjectFileExtension()
     {
-        throw new NotImplementedException();
+        return ".o";
+    }
+
+    private DirectoryReference[] GetSystemIncludePaths()
+    {
+        DirectoryReference SysrootInclude = InPrebuiltPlatformRoot.Combine("sysroot", "usr", "include");
+        return [
+            SysrootInclude,
+            SysrootInclude.Combine("c++", "v1"),
+            InPrebuiltPlatformRoot.Combine("include", "c++", "v1")
+        ];
+    }
+
+
+    private static string[] GetOptimizationArguments(ECompileConfiguration InConfiguration)
+    {
+        return InConfiguration switch
+        {
+            ECompileConfiguration.Debug => ["-O0", "-DDEBUG", "-g"],
+            ECompileConfiguration.Release => ["-flto", "-O3", "-DNDEBUG"],
+            _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null)
+        };
+    }
+
+    private string GetClangBySourceExtension(string FileExtension)
+    {
+        if (CCompiledSourceExtensions.Contains(FileExtension)) return _clangCompiler.PlatformPath;
+        if (CppCompiledSourceExtensions.Contains(FileExtension)) return _clangPlusPlusCompiler.PlatformPath;
+
+        throw new SourceFileExtensionNotSupportedException(FileExtension);
+    }
+
+    private static string GetClangBinaryTypeArgument(EModuleBinaryType BinaryType)
+    {
+        return BinaryType switch
+        {
+            EModuleBinaryType.Application => "",
+            EModuleBinaryType.StaticLibrary => "-staticlib",
+            EModuleBinaryType.DynamicLibrary => "-dynamiclib",
+            _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
+        };
     }
 }

@@ -8,6 +8,7 @@ using Shared.Processes;
 using Shared.Projects;
 using Shared.Toolchains;
 using Shared.Toolchains.Compilers;
+using Shared.Sources;
 
 namespace BuildTool.ProjectGeneration;
 
@@ -34,13 +35,17 @@ public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform
         
         Parallelization.ForEach(InModules, Module =>
         {
-            Console.WriteLine($"Processing {Module.Sources.SourceFiles.Length} sources for module: {Module.Name}");
+            ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, Module.BinaryType);
+
+            SourceCollection.GatherSourceFiles(Module.SourcesDirectory, InTargetPlatform.Platform);
+
+            Console.WriteLine($"Processing {SourceCollection.SourceFiles.Length} sources for module: {Module.Name}");
 
             DirectoryReference ObjectsDirectory = _compileDirectories.CreateIntermediateObjectsDirectory(Module.Name);
             
-            Parallelization.ForEach(Module.Sources.SourceFiles, SourceFile =>
+            Parallelization.ForEach(SourceCollection.SourceFiles, SourceFile =>
             {
-                CompileAction Action = new(SourceFile, ObjectsDirectory, InTargetPlatform.Toolchain, Module.Sources);
+                CompileAction Action = new(SourceFile, ObjectsDirectory, InTargetPlatform.Toolchain, SourceCollection);
 
                 DirectoryReference[] HeaderSearchPaths = [
                     .. Module.GetHeaderSearchPaths(ETargetPlatform.Any),

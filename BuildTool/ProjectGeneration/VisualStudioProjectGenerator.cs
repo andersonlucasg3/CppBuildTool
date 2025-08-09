@@ -8,6 +8,7 @@ using Shared.Compilation;
 namespace BuildTool.ProjectGeneration;
 
 using Shared.Extensions;
+using Shared.Sources;
 using VisualStudio.Filters;
 using VisualStudio.Projects;
 using VisualStudio.Solutions;
@@ -27,7 +28,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         Dictionary<string, ModuleDefinition> Modules = [];
         Modules.AddFrom(InProjectDefinition.GetModules(ETargetPlatform.Any), InProjectDefinition.GetModules(InTargetPlatform.Platform));
 
-        Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap = 
+        Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap =
             Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
 
         FileReference SolutionFile = $"{InProjectDefinition.Name}.sln";
@@ -43,7 +44,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
             ];
 
             SolutionProject[] Dependencies = [.. ModuleDependencies.Select(DependencyModule => Solution.Projects.First(Project => Project.ProjectName == DependencyModule.Name))];
-            
+
             GenerateVCXProj(InProjectDefinition.Name, Module, ModuleDependencies, Project, Dependencies, ModuleVcxProjFileMap[Module]);
         });
     }
@@ -78,11 +79,13 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         return Solution;
     }
 
-    private static void GenerateVCXProj(string InProjectName, ModuleDefinition InModule, ModuleDefinition[] InModuleDependencies, SolutionProject InProject, SolutionProject[] Dependencies, FileReference InVcxProjFile)
+    private void GenerateVCXProj(string InProjectName, ModuleDefinition InModule, ModuleDefinition[] InModuleDependencies, SolutionProject InProject, SolutionProject[] Dependencies, FileReference InVcxProjFile)
     {
         IndentedStringBuilder StringBuilder = new();
 
         DirectoryReference[] DependenciesSourcesDirectories = [.. InModuleDependencies.Select(Dependency => Dependency.SourcesDirectory)];
+
+        ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InModule.BinaryType);
 
         Project Project = new(new ProjectDependencies
         {
@@ -92,7 +95,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
                 BinaryType = InModule.BinaryType,
                 IntermediateDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Intermediate),
                 BinariesDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Binaries),
-                SourcesCollection = InModule.Sources!,
+                SourcesCollection = SourceCollection,
                 ProjectSourcesDirectory = InModule.SourcesDirectory,
                 DependenciesSourcesDirectories = DependenciesSourcesDirectories,
         });
@@ -103,7 +106,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
 
         // now the project filters file
 
-        ProjectFilters ProjectFilters = new(InModule.RootDirectory, InModule.Sources!);
+        ProjectFilters ProjectFilters = new(InModule.RootDirectory, SourceCollection);
 
         StringBuilder.Clear();
 

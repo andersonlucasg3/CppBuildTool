@@ -2,8 +2,10 @@ namespace Shared.Sources;
 
 using IO;
 using Processes;
+using Platforms;
+using Shared.Extensions;
 
-public abstract class CppSourceCollection : ISourceCollection
+public class CppSourceCollection : ISourceCollection
 {
     public static readonly string[] CSourceFilesExtensions = [".c", ".i"];
     public static readonly string[] CppSourceFileExtensions = [".cpp", ".cc", ".cxx", ".c++", ".ii"];
@@ -19,7 +21,7 @@ public abstract class CppSourceCollection : ISourceCollection
     public FileReference[] SourceFiles { get; private set; } = [];
     public FileReference[] AllFiles { get; private set; } = [];
 
-    public void GatherSourceFiles(DirectoryReference InSourcesRootDirectory)
+    public void GatherSourceFiles(DirectoryReference InSourcesRootDirectory, ETargetPlatform InTargetPlatform)
     {
         HeaderFilesExtensions = GetHeaderFilesExtensions();
         SourceFilesExtensions = GetSourceFilesExtensions();
@@ -27,6 +29,17 @@ public abstract class CppSourceCollection : ISourceCollection
 
         List<FileReference> HeadersList = [];
         List<FileReference> SourcesList = [];
+
+        List<ETargetPlatform> ExcludedPlatforms = [.. Enum.GetValues<ETargetPlatform>()];
+        ExcludedPlatforms.Remove(ETargetPlatform.Any);
+        ExcludedPlatforms.Remove(InTargetPlatform); // remove the current platform so we won't exclude it
+
+        List<ETargetPlatformGroup> ExcludedPlatformGroups = [.. Enum.GetValues<ETargetPlatformGroup>()];
+        ExcludedPlatformGroups.Remove(ETargetPlatformGroup.Any);
+        ExcludedPlatformGroups.Remove(ITargetPlatform.GetPlatformGroup(InTargetPlatform));
+
+        string[] ExcludedPlatformsPathComponent = [.. ExcludedPlatforms.Select(Each => $"/{Each.ToSourcePlatformName()}/")];
+        string[] ExcludedPlatformGroupsPathComponent = [.. ExcludedPlatformGroups.Select(Each => $"/{Each}/")];
 
         Action[] Actions = [
             () => {
@@ -36,7 +49,12 @@ public abstract class CppSourceCollection : ISourceCollection
 
                     lock (this)
                     {
-                        HeadersList.AddRange(Headers);
+                        foreach (FileReference Header in Headers)
+                        {
+                            if (ExcludeSource(Header, ExcludedPlatformsPathComponent, ExcludedPlatformGroupsPathComponent)) continue;
+
+                            HeadersList.Add(Header);
+                        }
                     }
                 });
             },
@@ -48,14 +66,19 @@ public abstract class CppSourceCollection : ISourceCollection
 
                     lock (this)
                     {
-                        SourcesList.AddRange(Sources);
+                        foreach (FileReference Source in Sources)
+                        {
+                            if(ExcludeSource(Source, ExcludedPlatformsPathComponent, ExcludedPlatformGroupsPathComponent)) continue;
+
+                            SourcesList.Add(Source);
+                        }
                     }
                 });
             }
         ];
-        
+
         Parallelization.ForEach(Actions, Action => Action.Invoke());
-        
+
         HeaderFiles = [.. HeadersList];
         SourceFiles = [.. SourcesList];
 
@@ -76,5 +99,10 @@ public abstract class CppSourceCollection : ISourceCollection
             .. CSourceFilesExtensions,
             .. CppSourceFileExtensions,
         ];
+    }
+
+    private static bool ExcludeSource(FileReference InSource, string[] ExcludedPlatforms, string[] ExcludedPlatformGroups)
+    {
+        return ExcludedPlatforms.Any(InSource.RelativePath.Contains) || ExcludedPlatformGroups.Any(InSource.RelativePath.Contains);
     }
 }

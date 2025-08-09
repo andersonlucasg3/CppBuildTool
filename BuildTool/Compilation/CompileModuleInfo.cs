@@ -1,5 +1,6 @@
 using Shared.Compilation;
 using Shared.Projects;
+using Shared.Sources;
 
 namespace BuildTool.Compilation;
 

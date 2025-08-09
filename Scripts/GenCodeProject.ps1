@@ -20,7 +20,8 @@ param(
         "tvOS",
         "visionOS",
         "macOS",
-        "Windows"
+        "Windows",
+        "Android"
     )]
     [string] $Platform,
 
