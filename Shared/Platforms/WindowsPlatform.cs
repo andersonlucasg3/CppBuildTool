@@ -12,12 +12,12 @@ public class WindowsPlatform : IHostPlatform
     {
         Toolchain = new VisualStudioToolchain();
 
+        AndroidToolchain AndroidToolchain = new();
+
         SupportedTargetPlatforms = new Dictionary<ETargetPlatform, ITargetPlatform>
         {
             { ETargetPlatform.Windows, this },
-            // Android
-            // Consoles
-            // ...
+            { ETargetPlatform.Android, new AndroidPlatform(AndroidToolchain) },
         };
     }
 }
