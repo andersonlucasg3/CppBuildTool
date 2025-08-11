@@ -21,7 +21,30 @@ public class CppSourceCollection : ISourceCollection
     public FileReference[] SourceFiles { get; private set; } = [];
     public FileReference[] AllFiles { get; private set; } = [];
 
-    public void GatherSourceFiles(DirectoryReference InSourcesRootDirectory, ETargetPlatform InTargetPlatform)
+    private string[] ExcludedPlatforms;
+    private string[] ExcludedPlatformGroups;
+    private string[] ExcludedPlatformTypes;
+
+    public CppSourceCollection(ETargetPlatform InTargetPlatform)
+    {
+        List<ETargetPlatform> ExcludedPlatformsList = [.. Enum.GetValues<ETargetPlatform>()];
+        ExcludedPlatformsList.Remove(ETargetPlatform.Any);
+        ExcludedPlatformsList.Remove(InTargetPlatform); // remove the current platform so we won't exclude it
+
+        List<ETargetPlatformGroup> ExcludedPlatformGroupsList = [.. Enum.GetValues<ETargetPlatformGroup>()];
+        ExcludedPlatformGroupsList.Remove(ETargetPlatformGroup.Any);
+        ExcludedPlatformGroupsList.Remove(ITargetPlatform.GetPlatformGroup(InTargetPlatform));
+
+        List<ETargetPlatformType> ExcludedPlatformTypesList = [.. Enum.GetValues<ETargetPlatformType>()];
+        ExcludedPlatformTypesList.Remove(ETargetPlatformType.Any);
+        ExcludedPlatformTypesList.Remove(ITargetPlatform.GetPlatformType(InTargetPlatform));
+
+        ExcludedPlatforms = [.. ExcludedPlatformsList.Select(Each => $"/{Each.ToSourcePlatformName()}/")];
+        ExcludedPlatformGroups = [.. ExcludedPlatformGroupsList.Select(Each => $"/{Each}/")];
+        ExcludedPlatformTypes = [.. ExcludedPlatformTypesList.Select(Each => $"/{Each}/")];
+    }
+
+    public void GatherSourceFiles(DirectoryReference InSourcesRootDirectory)
     {
         HeaderFilesExtensions = GetHeaderFilesExtensions();
         SourceFilesExtensions = GetSourceFilesExtensions();
@@ -29,17 +52,6 @@ public class CppSourceCollection : ISourceCollection
 
         List<FileReference> HeadersList = [];
         List<FileReference> SourcesList = [];
-
-        List<ETargetPlatform> ExcludedPlatforms = [.. Enum.GetValues<ETargetPlatform>()];
-        ExcludedPlatforms.Remove(ETargetPlatform.Any);
-        ExcludedPlatforms.Remove(InTargetPlatform); // remove the current platform so we won't exclude it
-
-        List<ETargetPlatformGroup> ExcludedPlatformGroups = [.. Enum.GetValues<ETargetPlatformGroup>()];
-        ExcludedPlatformGroups.Remove(ETargetPlatformGroup.Any);
-        ExcludedPlatformGroups.Remove(ITargetPlatform.GetPlatformGroup(InTargetPlatform));
-
-        string[] ExcludedPlatformsPathComponent = [.. ExcludedPlatforms.Select(Each => $"/{Each.ToSourcePlatformName()}/")];
-        string[] ExcludedPlatformGroupsPathComponent = [.. ExcludedPlatformGroups.Select(Each => $"/{Each}/")];
 
         Action[] Actions = [
             () => {
@@ -51,7 +63,7 @@ public class CppSourceCollection : ISourceCollection
                     {
                         foreach (FileReference Header in Headers)
                         {
-                            if (ExcludeSource(Header, ExcludedPlatformsPathComponent, ExcludedPlatformGroupsPathComponent)) continue;
+                            if (ExcludeSource(Header)) continue;
 
                             HeadersList.Add(Header);
                         }
@@ -68,7 +80,7 @@ public class CppSourceCollection : ISourceCollection
                     {
                         foreach (FileReference Source in Sources)
                         {
-                            if(ExcludeSource(Source, ExcludedPlatformsPathComponent, ExcludedPlatformGroupsPathComponent)) continue;
+                            if(ExcludeSource(Source)) continue;
 
                             SourcesList.Add(Source);
                         }
@@ -101,8 +113,10 @@ public class CppSourceCollection : ISourceCollection
         ];
     }
 
-    private static bool ExcludeSource(FileReference InSource, string[] ExcludedPlatforms, string[] ExcludedPlatformGroups)
+    private bool ExcludeSource(FileReference InSource)
     {
-        return ExcludedPlatforms.Any(InSource.RelativePath.Contains) || ExcludedPlatformGroups.Any(InSource.RelativePath.Contains);
+        return ExcludedPlatforms.Any(InSource.RelativePath.Contains) ||
+               ExcludedPlatformGroups.Any(InSource.RelativePath.Contains) ||
+               ExcludedPlatformTypes.Any(InSource.RelativePath.Contains);
     }
 }

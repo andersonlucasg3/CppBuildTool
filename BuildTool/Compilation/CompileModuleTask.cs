@@ -15,7 +15,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
     {
         ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InInfo.Module.BinaryType);
 
-        SourceCollection.GatherSourceFiles(InInfo.Module.SourcesDirectory, InTargetPlatform.Platform);
+        SourceCollection.GatherSourceFiles(InInfo.Module.SourcesDirectory);
 
         CompileAction[] SourceCompileActions = GenerateCompileActions(InTargetPlatform.Toolchain, SourceCollection, out InInfo.CompileActions);
         

@@ -14,7 +14,7 @@ public interface ISourceCollection
     public FileReference[] SourceFiles { get; }
     public FileReference[] AllFiles { get; }
 
-    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory, ETargetPlatform InTargetPlatform);
+    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory);
 
     public static ISourceCollection CreateSourceCollection(ETargetPlatform InTargetPlatform, EModuleBinaryType InBinaryType)
     {
@@ -23,10 +23,10 @@ public interface ISourceCollection
             ETargetPlatformGroup.Apple => InBinaryType switch
             {
                 EModuleBinaryType.ShaderLibrary => new MetalShaderSourceCollection(),
-                _ => new AppleSourceCollection(),
+                _ => new AppleSourceCollection(InTargetPlatform),
             },
-            ETargetPlatformGroup.Google => new CppSourceCollection(),
-            ETargetPlatformGroup.Microsoft => new CppSourceCollection(),
+            ETargetPlatformGroup.Google => new CppSourceCollection(InTargetPlatform),
+            ETargetPlatformGroup.Microsoft => new CppSourceCollection(InTargetPlatform),
             _ => throw new PlatformNotSupportedException(InTargetPlatform),
         };
     }

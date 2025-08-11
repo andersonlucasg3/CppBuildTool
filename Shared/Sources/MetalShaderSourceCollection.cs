@@ -20,7 +20,7 @@ public class MetalShaderSourceCollection : ISourceCollection
 
     public FileReference[] AllFiles { get; private set; } = [];
 
-    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory, ETargetPlatform _)
+    public void GatherSourceFiles(DirectoryReference InSourceRootDirectory)
     {
         AllFiles = SourceFiles = InSourceRootDirectory.EnumerateFiles("*.metal", SearchOption.AllDirectories);
     }

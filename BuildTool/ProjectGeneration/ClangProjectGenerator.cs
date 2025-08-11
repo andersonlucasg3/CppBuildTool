@@ -37,7 +37,7 @@ public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform
         {
             ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, Module.BinaryType);
 
-            SourceCollection.GatherSourceFiles(Module.SourcesDirectory, InTargetPlatform.Platform);
+            SourceCollection.GatherSourceFiles(Module.SourcesDirectory);
 
             Console.WriteLine($"Processing {SourceCollection.SourceFiles.Length} sources for module: {Module.Name}");
 

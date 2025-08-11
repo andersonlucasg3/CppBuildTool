@@ -1,6 +1,8 @@
 namespace Shared.Sources;
 
-public class AppleSourceCollection : CppSourceCollection
+using Platforms;
+
+public class AppleSourceCollection(ETargetPlatform InTargetPLatform) : CppSourceCollection(InTargetPLatform)
 {
     public static readonly string[] ObjCSourceFilesExtensions = [".m", ".mi"];
     public static readonly string[] ObjCppSourceFilesExtensions = [".mm", ".mii"];
