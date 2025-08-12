@@ -98,6 +98,13 @@ public static class CompilerDefinitionsProvider
             TypeDefine += $"={Value}";
 
             PlatformDefinitions.Add(TypeDefine);
+
+            if (Value == 1)
+            {
+                // this is like:
+                // #define PLATFORM_TYPE_NAME Desktop
+                PlatformDefinitions.Add($"PLATFORM_TYPE_NAME={TargetType}");
+            }
         }
 
         return [.. PlatformDefinitions];

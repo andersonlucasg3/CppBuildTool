@@ -28,8 +28,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         Dictionary<string, ModuleDefinition> Modules = [];
         Modules.AddFrom(InProjectDefinition.GetModules(ETargetPlatform.Any), InProjectDefinition.GetModules(InTargetPlatform.Platform));
 
-        Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap =
-            Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
+        Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap = Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
 
         FileReference SolutionFile = $"{InProjectDefinition.Name}.sln";
         Solution Solution = GenerateSolutionFile(SolutionFile, CSharpProjects, ModuleVcxProjFileMap);

@@ -4,8 +4,7 @@ using IO;
 using Projects;
 using Compilation;
 
-
-public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCompiler
+public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string InAArch, int InAndroidNdkApiVersion, int InMinimumSupportedAndroidNdkVersion) : CppCompiler
 {
     private readonly FileReference _clangCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang");
     private readonly FileReference _clangPlusPlusCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang++");
@@ -29,7 +28,7 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCom
             "-stdlib=libc++",
             "-Wall",
             "-Wextra",
-            "-target", "aarch64-none-linux-android21",
+            "-target", $"{InAArch}-none-linux-android{InMinimumSupportedAndroidNdkVersion}",
             $"--sysroot={InPrebuiltPlatformRoot.Combine("sysroot").PlatformPath}",
             .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-D{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
@@ -44,8 +43,11 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCom
             string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath)),
             "-o",
             InLinkCommandInfo.LinkedFile.PlatformPath,
+            .. GetSystemLibrarySearchPaths().Select(Each => $"-L{Each.PlatformPath}"),
             .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"),
             .. InLinkCommandInfo.Module.GetDependencies().Select(Dependency => $"-l{Dependency.Name}"),
+            "-target", $"{InAArch}-none-linux-android{InMinimumSupportedAndroidNdkVersion}",
+            "-llog", "-landroid",
         ];
     }
 
@@ -64,6 +66,14 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCom
         ];
     }
 
+    private DirectoryReference[] GetSystemLibrarySearchPaths()
+    {
+        DirectoryReference SysrootLibraries = InPrebuiltPlatformRoot.Combine("sysroot", "usr", "lib", $"{InAArch}-linux-android");
+        return [
+            SysrootLibraries,
+            // SysrootLibraries.Combine($"{InMinimumSupportedAndroidNdkVersion}"),
+        ];
+    }
 
     private static string[] GetOptimizationArguments(ECompileConfiguration InConfiguration)
     {
@@ -88,8 +98,8 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot) : CppCom
         return BinaryType switch
         {
             EModuleBinaryType.Application => "",
-            EModuleBinaryType.StaticLibrary => "-staticlib",
-            EModuleBinaryType.DynamicLibrary => "-dynamiclib",
+            EModuleBinaryType.StaticLibrary => "-static",
+            EModuleBinaryType.DynamicLibrary => "-shared",
             _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
         };
     }

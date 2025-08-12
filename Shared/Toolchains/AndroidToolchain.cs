@@ -9,6 +9,9 @@ using Compilers.Android;
 public class AndroidToolchain : ClangToolchain
 {
     const string SupportedAndroidNdkVersion = "29.0.13846066";
+    const int AndroidNdkApiVersion = 35;
+    const int MinimumSupportedAndroidNdkVersion = 21;
+    const string CompilingAndroidArch = "aarch64"; // TODO: this should be configurable
 
     private readonly AndroidCompiler _compiler;
 
@@ -51,7 +54,7 @@ public class AndroidToolchain : ClangToolchain
 
         DirectoryReference PrebuiltPlatformRoot = AndroidNdk.Combine("toolchains", "llvm", "prebuilt", AndroidPrebuiltPlatform);
 
-        _compiler = new(PrebuiltPlatformRoot);
+        _compiler = new(PrebuiltPlatformRoot, CompilingAndroidArch, AndroidNdkApiVersion, MinimumSupportedAndroidNdkVersion);
     }
 
     public override string GetBinaryTypeExtension(EModuleBinaryType BinaryType)
