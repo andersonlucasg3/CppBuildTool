@@ -2,4 +2,4 @@
 
 using Solutions;
 
-public class UniqueIdentifier() : Tag(SolutionGuid.NewGuid().ToString());
+public class UniqueIdentifier() : ATag(SolutionGuid.NewGuid().ToString());

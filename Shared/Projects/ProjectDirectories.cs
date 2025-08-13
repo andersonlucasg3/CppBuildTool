@@ -1,8 +1,9 @@
-using Shared.Compilation;
-using Shared.IO;
 using Shared.Platforms;
 
 namespace Shared.Projects;
+
+using IO;
+using Compilation;
 
 public enum ECompileBaseDirectory
 {
@@ -15,18 +16,18 @@ public class ProjectDirectories
     private static ProjectDirectories? _shared;
     public static ProjectDirectories Shared => _shared!;
 
-    private readonly ProjectDefinition _inProjectDefinition;
-    private readonly ITargetPlatform _inTargetPlatform;
+    private readonly AProjectDefinition _inProjectDefinition;
+    private readonly ATargetPlatform _inTargetPlatform;
     private readonly ECompileConfiguration _inConfiguration;
     
-    private ProjectDirectories(ProjectDefinition InProjectDefinition, ITargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+    private ProjectDirectories(AProjectDefinition InProjectDefinition, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
     {
         _inProjectDefinition = InProjectDefinition;
         _inTargetPlatform = InTargetPlatform;
         _inConfiguration = InConfiguration;
     }
     
-    public static void Create(ProjectDefinition InProjectDefinition, ITargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration) 
+    public static void Create(AProjectDefinition InProjectDefinition, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration) 
         => _shared = new(InProjectDefinition, InTargetPlatform, InConfiguration);
 
     public DirectoryReference CreateIntermediateProjectsDirectory(bool bCreate = true)

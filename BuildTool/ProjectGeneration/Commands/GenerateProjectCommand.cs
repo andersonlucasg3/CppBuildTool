@@ -30,18 +30,18 @@ public class GenCodeProject : IExecutableCommand
         ProjectFinder.CompileProject(RootDirectory, ProjectName);
         ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
-        ProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
+        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
 
         EProjectGeneratorType GeneratorType = Generator.ToEnum<EProjectGeneratorType>();
         ETargetPlatform CompilePlatform = PlatformString.ToEnum<ETargetPlatform>();
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
         
-        IHostPlatform HostPlatform = IHostPlatform.GetHost();
-        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ITargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
+        AHostPlatform HostPlatform = AHostPlatform.GetHost();
+        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
 
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
         
-        ModuleDefinition[] SelectedModules = [
+        AModuleDefinition[] SelectedModules = [
             .. Project.GetModules(ETargetPlatform.Any).Values,
             .. Project.GetModules(TargetPlatform.Platform).Values
         ];

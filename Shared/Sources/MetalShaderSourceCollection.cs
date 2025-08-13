@@ -1,8 +1,6 @@
 namespace Shared.Sources;
 
 using IO;
-using Processes;
-using Shared.Platforms;
 
 
 public class MetalShaderSourceCollection : ISourceCollection

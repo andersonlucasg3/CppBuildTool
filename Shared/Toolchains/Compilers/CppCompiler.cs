@@ -2,7 +2,7 @@ namespace Shared.Toolchains.Compilers;
 
 using Sources;
 
-public abstract class CppCompiler : ICompiler
+public abstract class ACppCompiler : ICompiler
 {
     public const string CppStandard = "c++23";
 

@@ -4,7 +4,7 @@ using Sources;
 using Projects;
 using Compilation;
 
-public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : CppCompiler
+public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACppCompiler
 {
     public override string[] CCompiledSourceExtensions => [.. base.CCompiledSourceExtensions, .. AppleSourceCollection.ObjCSourceFilesExtensions];
     public override string[] CppCompiledSourceExtensions => [.. base.CppCompiledSourceExtensions, .. AppleSourceCollection.ObjCppSourceFilesExtensions];
@@ -64,7 +64,7 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : CppC
             CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"));
         }
 
-        IReadOnlySet<ModuleDefinition> ModuleDependencies = InLinkCommandInfo.Module.GetDependencies();
+        IReadOnlySet<AModuleDefinition> ModuleDependencies = InLinkCommandInfo.Module.GetDependencies();
         if (ModuleDependencies.Count > 0)
         {
             CommandLine.AddRange(ModuleDependencies.Select(Dependency => $"-l{Dependency.Name}"));

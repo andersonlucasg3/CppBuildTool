@@ -1,13 +1,13 @@
 namespace Shared.Exceptions;
 
-public abstract class BaseException : Exception
+public abstract class ABaseException : Exception
 {
-    protected BaseException() : base()
+    protected ABaseException() : base()
     {
         //
     }
 
-    protected BaseException(string? message) : base(message)
+    protected ABaseException(string? message) : base(message)
     {
         //
     }

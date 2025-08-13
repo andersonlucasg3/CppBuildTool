@@ -1,20 +1,19 @@
 namespace Shared.Toolchains;
 
 using IO;
-using Sources;
 using Projects;
 using Processes;
 using Exceptions;
 using Shared.Platforms;
 
-public abstract class ClangToolchain : IToolchain
+public abstract class AClangToolchain : IToolchain
 {
     public abstract string GetBinaryTypeExtension(EModuleBinaryType BinaryType);
     public abstract string GetBinaryTypePrefix(EModuleBinaryType BinaryType);
     public abstract string[] GetCompileCommandline(CompileCommandInfo InCompileCommandInfo);
     public abstract string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo);
     public abstract string GetObjectFileExtension(FileReference InSourceFile);
-    public abstract string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform);
+    public abstract string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform);
 
     public virtual ProcessResult Compile(CompileCommandInfo InCompileCommandInfo)
     {
@@ -28,4 +27,4 @@ public abstract class ClangToolchain : IToolchain
 }
 
 public class CompilerAlreadyRegisteredException(string InExtension, string InCompilerName) 
-    : BaseException($"Compiler {InCompilerName} already added for extension {InExtension}");
+    : ABaseException($"Compiler {InCompilerName} already added for extension {InExtension}");

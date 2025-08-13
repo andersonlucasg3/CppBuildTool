@@ -4,7 +4,7 @@ using IO;
 using Projects;
 using Compilation;
 
-public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string InAArch, int InAndroidNdkApiVersion, int InMinimumSupportedAndroidNdkVersion) : CppCompiler
+public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string InAArch, int InMinimumSupportedAndroidNdkVersion) : ACppCompiler
 {
     private readonly FileReference _clangCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang");
     private readonly FileReference _clangPlusPlusCompiler = InPrebuiltPlatformRoot.CombineFile("bin", "clang++");
@@ -71,7 +71,6 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
         DirectoryReference SysrootLibraries = InPrebuiltPlatformRoot.Combine("sysroot", "usr", "lib", $"{InAArch}-linux-android");
         return [
             SysrootLibraries,
-            // SysrootLibraries.Combine($"{InMinimumSupportedAndroidNdkVersion}"),
         ];
     }
 

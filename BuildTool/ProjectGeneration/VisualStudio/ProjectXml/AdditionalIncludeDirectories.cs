@@ -2,4 +2,4 @@
 
 namespace BuildTool.ProjectGeneration.VisualStudio.ProjectXml;
 
-public class AdditionalIncludeDirectories(DirectoryReference InIncludeDirectory) : Tag($"$(SolutionDir){InIncludeDirectory.RelativePath};%({nameof(AdditionalIncludeDirectories)})");
+public class AdditionalIncludeDirectories(DirectoryReference InIncludeDirectory) : ATag($"$(SolutionDir){InIncludeDirectory.RelativePath};%({nameof(AdditionalIncludeDirectories)})");

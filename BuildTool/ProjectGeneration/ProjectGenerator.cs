@@ -1,5 +1,4 @@
 using Shared.Exceptions;
-using Shared.Projects;
 
 namespace BuildTool.ProjectGeneration;
 
@@ -14,4 +13,4 @@ public interface IProjectGenerator
     public void Generate();
 }
 
-public class ProjectGeneratorNotSupportedException(string InMessage) : BaseException(InMessage);
+public class ProjectGeneratorNotSupportedException(string InMessage) : ABaseException(InMessage);

@@ -7,7 +7,7 @@ using Shared.Projects;
 using Solutions;
 
 public class Globals(SolutionProject InProject, EModuleBinaryType InBinaryType, DirectoryReference InIntermediateDirectory, DirectoryReference InBinariesDirectory) 
-    : PropertyGroup
+    : APropertyGroup
 {
     public readonly string ProjectNameProperty = InProject.ProjectName;
     public readonly string VCProjectVersionProperty = "17.0";
@@ -24,7 +24,7 @@ public class Globals(SolutionProject InProject, EModuleBinaryType InBinaryType, 
         new Parameter("Label", "Globals")
     ];
 
-    protected override Tag[] Contents => [
+    protected override ATag[] Contents => [
         new VCProjectVersion(VCProjectVersionProperty),
         new Keyword(KeywordProperty),
         new ProjectGuid(ProjectGuidProperty),
@@ -37,14 +37,14 @@ public class Globals(SolutionProject InProject, EModuleBinaryType InBinaryType, 
         new ConfigurationType(ConfigurationTypeProperty),
     ];
 
-    public class VCProjectVersion(string InVersion) : Tag(InVersion);
-    public class Keyword(string InKeyword) : Tag(InKeyword);
-    public class ProjectGuid(SolutionGuid InGuid) : Tag(InGuid.ToString());
-    public class ProjectName(string InName) : Tag(InName);
-    public class RootNamespace(string InName) : Tag(InName);
-    public class WindowsTargetPlatformVersion(string InVersion) : Tag(InVersion);
-    public class OutputPath(string InPath) : Tag(InPath);
-    public class IntDir(string InPath) : Tag(InPath);
-    public class OutDir(string InPath) : Tag(InPath);
-    public class ConfigurationType(EModuleBinaryType InBinaryType) : Tag(InBinaryType.ToString());
+    public class VCProjectVersion(string InVersion) : ATag(InVersion);
+    public class Keyword(string InKeyword) : ATag(InKeyword);
+    public class ProjectGuid(SolutionGuid InGuid) : ATag(InGuid.ToString());
+    public class ProjectName(string InName) : ATag(InName);
+    public class RootNamespace(string InName) : ATag(InName);
+    public class WindowsTargetPlatformVersion(string InVersion) : ATag(InVersion);
+    public class OutputPath(string InPath) : ATag(InPath);
+    public class IntDir(string InPath) : ATag(InPath);
+    public class OutDir(string InPath) : ATag(InPath);
+    public class ConfigurationType(EModuleBinaryType InBinaryType) : ATag(InBinaryType.ToString());
 }

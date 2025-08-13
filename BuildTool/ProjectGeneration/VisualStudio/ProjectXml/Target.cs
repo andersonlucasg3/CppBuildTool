@@ -1,17 +1,17 @@
 ﻿namespace BuildTool.ProjectGeneration.VisualStudio.ProjectXml;
 
-public class Target(string InCommandName, string? InCommand = null, Parameter[]? InExtraParameters = null) : TTagGroup<Tag>
+public class Target(string InCommandName, string? InCommand = null, Parameter[]? InExtraParameters = null) : TTagGroup<ATag>
 {
     protected override Parameter[] Parameters => [
         new Parameter("Name", InCommandName),
         .. InExtraParameters ?? [],
     ];
 
-    protected override Tag[] Contents
+    protected override ATag[] Contents
     {
         get
         {
-            List<Tag> TagList = [new Message($"{InCommandName} $(ProjectName) $(Platform) $(Configuration)")];
+            List<ATag> TagList = [new Message($"{InCommandName} $(ProjectName) $(Platform) $(Configuration)")];
             if (!string.IsNullOrEmpty(InCommand))
             {
                 TagList.Add(new Exec(InCommand));
@@ -21,7 +21,7 @@ public class Target(string InCommandName, string? InCommand = null, Parameter[]?
     }
 }
 
-public class Message(string InText) : Tag
+public class Message(string InText) : ATag
 {
     protected override Parameter[] Parameters => [
         new Parameter("Text", InText),
@@ -29,7 +29,7 @@ public class Message(string InText) : Tag
     ];
 }
 
-public class Exec(string InCommand) : Tag
+public class Exec(string InCommand) : ATag
 {
     protected override Parameter[] Parameters => [
         new Parameter("Command", InCommand),

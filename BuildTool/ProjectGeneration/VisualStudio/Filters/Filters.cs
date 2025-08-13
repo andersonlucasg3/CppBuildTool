@@ -4,7 +4,7 @@ namespace BuildTool.ProjectGeneration.VisualStudio.Filters;
 
 using ProjectXml;
 
-public class Filter(string InName, ISourceCollection InSourceCollection) : TTagGroup<Tag>
+public class Filter(string InName, ISourceCollection InSourceCollection) : TTagGroup<ATag>
 {
     protected override string TagName => "Filter";
     
@@ -12,7 +12,7 @@ public class Filter(string InName, ISourceCollection InSourceCollection) : TTagG
         new Parameter("Include", InName),
     ];
 
-    protected override Tag[] Contents => [
+    protected override ATag[] Contents => [
         new UniqueIdentifier(),
         new Extensions(string.Join(';', InSourceCollection.AllFilesExtensions)),
     ];

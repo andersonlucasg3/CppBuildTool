@@ -9,7 +9,6 @@ using Shared.Processes;
 using Shared.IO;
 using BuildTool.Resources;
 using Shared.Sources;
-using System.Reflection;
 
 namespace BuildTool.Compilation.Commands;
 
@@ -24,7 +23,7 @@ public class Compile : IExecutableCommand
     );
 
     public readonly object _threadSafeLock = new();
-    
+
     public bool Execute(IReadOnlyDictionary<string, ICommandLineArgument> Arguments)
     {
         string ProjectName = Arguments.GetArgumentValue<string>("Project", true) ?? "";
@@ -36,7 +35,7 @@ public class Compile : IExecutableCommand
         bool bRecompile = Arguments.ContainsKey("Recompile");
         bool bPrintCompileCommands = Arguments.ContainsKey("PrintCompileCommands");
         bool bPrintLinkCommands = Arguments.ContainsKey("PrintLinkCommands");
-        
+
         ETargetPlatform CompilePlatform = PlatformString.ToEnum<ETargetPlatform>();
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
 
@@ -44,26 +43,26 @@ public class Compile : IExecutableCommand
         ProjectFinder.CompileProject(RootDirectory, ProjectName);
         ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
-        ProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
-        
-        IHostPlatform HostPlatform = IHostPlatform.GetHost();
-        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ITargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
-        
+        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
+
+        AHostPlatform HostPlatform = AHostPlatform.GetHost();
+        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
+
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
-        
+
         if (bRecompile)
         {
             Clean Clean = new();
             Clean.Execute(Arguments);
         }
-        
+
         // must have all modules here, not only the selected ones due to dependency
-        Dictionary<string, ModuleDefinition> AllModulesMap = [];
+        Dictionary<string, AModuleDefinition> AllModulesMap = [];
         AllModulesMap.AddFrom(Project.GetModules(ETargetPlatform.Any), Project.GetModules(TargetPlatform.Platform));
 
-        ModuleDefinition[] AllModules = [.. AllModulesMap.Values];
+        AModuleDefinition[] AllModules = [.. AllModulesMap.Values];
 
-        ModuleDefinition[] SelectedModules;
+        AModuleDefinition[] SelectedModules;
         if (Modules is null || Modules.Length == 0)
         {
             SelectedModules = AllModules;
@@ -73,7 +72,7 @@ public class Compile : IExecutableCommand
         {
             string ModuleName = Modules[0];
 
-            if (!AllModulesMap.TryGetValue(ModuleName, out ModuleDefinition? ModuleDefinition))
+            if (!AllModulesMap.TryGetValue(ModuleName, out AModuleDefinition? ModuleDefinition))
             {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Module {ModuleName} not found in project {Project.Name}");
@@ -98,11 +97,14 @@ public class Compile : IExecutableCommand
 
         Console.WriteLine($"Compiling on {HostPlatform.Name} platform targeting {TargetPlatform.Name}");
 
-        Dictionary<ModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap = AllModules.ToDictionary(
+        Dictionary<AModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap = AllModules.ToDictionary(
             Module => Module,
-            Module => new CompileModuleInfo(Module, new (Module, TargetPlatform.Toolchain))
-        );
-        
+            Module =>
+            {
+                ISourceCollection SC = ISourceCollection.CreateSourceCollection(TargetPlatform.Platform, Module.BinaryType);
+                return new CompileModuleInfo(Module, SC, new(Module, TargetPlatform.Toolchain));
+            });
+
         CompileModuleInfo[] CompileModuleInfos = [.. SelectedModules.Select(Module => ModuleCompilationResultMap[Module])];
 
         ChecksumStorage.Shared.LoadChecksums();
@@ -143,4 +145,4 @@ public class Compile : IExecutableCommand
     }
 }
 
-public class TargetPlatformNotSupportedException(string InMessage) : BaseException(InMessage);
+public class TargetPlatformNotSupportedException(string InMessage) : ABaseException(InMessage);

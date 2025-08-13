@@ -2,14 +2,14 @@
 
 namespace BuildTool.ProjectGeneration.VisualStudio.ProjectXml;
 
-public abstract class Tag : IIndentedStringBuildable
+public abstract class ATag : IIndentedStringBuildable
 {
     protected virtual string TagName { get; }
     protected readonly string? RawContent;
 
     protected virtual Parameter[] Parameters { get; } = [];
 
-    public Tag(string? InRawContent = null)
+    public ATag(string? InRawContent = null)
     {
         TagName = GetType().Name;
         RawContent = InRawContent;

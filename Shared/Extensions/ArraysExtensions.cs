@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Shared.Extensions;
 
 public static class ArraysExtensions

@@ -33,17 +33,17 @@ public class Clean : IExecutableCommand
         ProjectFinder.CompileProject(RootDirectory, ProjectName);
         ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
-        ProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
+        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
         
-        IHostPlatform HostPlatform = IHostPlatform.GetHost();
-        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ITargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
+        AHostPlatform HostPlatform = AHostPlatform.GetHost();
+        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
         
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
 
-        Dictionary<string, ModuleDefinition> AllModulesMap = [];
+        Dictionary<string, AModuleDefinition> AllModulesMap = [];
         AllModulesMap.AddFrom(Project.GetModules(ETargetPlatform.Any), Project.GetModules(TargetPlatform.Platform));
 
-        ModuleDefinition[] SelectedModules;
+        AModuleDefinition[] SelectedModules;
         if (Modules is null || Modules.Length == 0)
         {
             SelectedModules = [.. AllModulesMap.Values];

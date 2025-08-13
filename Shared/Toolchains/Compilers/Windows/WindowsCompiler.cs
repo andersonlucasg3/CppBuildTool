@@ -4,7 +4,7 @@ using Shared.Projects;
 
 namespace Shared.Toolchains.Compilers.Windows;
 
-public class WindowsCompiler(string InClangPath, string InLinkPath) : CppCompiler
+public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompiler
 {
     private readonly string _clangPath = InClangPath;
     private readonly string _linkPath = InLinkPath;
@@ -61,7 +61,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : CppCompile
             EModuleBinaryType.Application => "/EXE",
             EModuleBinaryType.StaticLibrary => throw new NotSupportedException($"{InBinaryType}"),
             EModuleBinaryType.DynamicLibrary => "/DLL",
-            EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException($"{InBinaryType}"),
+            EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException(InBinaryType),
             _ => throw new ArgumentOutOfRangeException(nameof(InBinaryType), InBinaryType, null),
         };
     }

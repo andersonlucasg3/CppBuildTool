@@ -15,9 +15,10 @@ public enum ECompilationResult
     LinkFailed,
 }
 
-public class CompileModuleInfo(ModuleDefinition InModule, LinkAction InLinkAction)
+public class CompileModuleInfo(AModuleDefinition InModule, ISourceCollection InSourceCollection, LinkAction InLinkAction)
 {
-    public readonly ModuleDefinition Module = InModule;
+    public readonly AModuleDefinition Module = InModule;
+    public readonly ISourceCollection SourceCollection = InSourceCollection;
     public readonly LinkAction Link = InLinkAction;
     
     public string ModuleName => Module.Name;

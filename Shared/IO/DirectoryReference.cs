@@ -104,4 +104,4 @@ public class DirectoryReference : TFileSystemReference<DirectoryReference>
     }
 }
 
-public class MissingFileExtensionException(string InMessage) : BaseException(InMessage);
+public class MissingFileExtensionException(string InMessage) : ABaseException(InMessage);

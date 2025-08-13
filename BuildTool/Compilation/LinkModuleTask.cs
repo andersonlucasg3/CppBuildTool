@@ -6,11 +6,11 @@ using Shared.Toolchains;
 
 namespace BuildTool.Compilation;
 
-public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ITargetPlatform InTargetPlatform)
+public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform)
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;
 
-    public void Link(Dictionary<ModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap, bool bPrintLinkCommands)
+    public void Link(Dictionary<AModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap, bool bPrintLinkCommands)
     {
         if (InInfo.Result is ECompilationResult.NothingToCompile && InInfo.Link.LinkedFile.bExists)
         {
@@ -24,7 +24,7 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, I
         bool bCanLink;
         do
         {
-            ModuleDefinition[] Dependencies = [
+            AModuleDefinition[] Dependencies = [
                 .. InInfo.Module.GetDependencies(InTargetPlatform.Platform),
                 .. InInfo.Module.GetDependencies(ETargetPlatform.Any),
             ];

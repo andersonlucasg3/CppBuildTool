@@ -1,21 +1,18 @@
-using System.Runtime.InteropServices;
-
 namespace Shared.Projects;
 
 using IO;
 using Exceptions;
-using Sources;
 using Shared.Platforms;
 using Projects.Platforms;
 
 
-public abstract class ModuleDefinition : Definition
+public abstract class AModuleDefinition : ADefinition
 {
     private bool _bIsConfigured = false;
-    private ProjectDefinition? _ownerProject = null;
+    private AProjectDefinition? _ownerProject = null;
 
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _headerSearchPathPerPlatform = [];
-    private readonly Dictionary<ETargetPlatform, HashSet<ModuleDefinition>> _dependenciesPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, HashSet<AModuleDefinition>> _dependenciesPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _compilerDefinitionsPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _linkWithLibrariesPerPlatform = [];
 
@@ -30,20 +27,20 @@ public abstract class ModuleDefinition : Definition
 
     public abstract EModuleBinaryType BinaryType { get; }
 
-    public ProjectDefinition OwnerProject => _ownerProject!;
+    public AProjectDefinition OwnerProject => _ownerProject!;
 
     public IReadOnlyList<string> LibrarySearchPaths => _librarySearchPaths;
     public IReadOnlyList<DirectoryReference> CopyResourcesDirectories => _copyResourcesDirectories;
 
     public PlatformSpecifics PlatformSpecifics { get; } = new();
 
-    protected abstract void Configure(ProjectDefinition InOwnerProject);
+    protected abstract void Configure(AProjectDefinition InOwnerProject);
 
-    public IReadOnlySet<ModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    public IReadOnlySet<AModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
     {
-        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<ModuleDefinition>? ModuleSet))
+        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AModuleDefinition>? ModuleSet))
         {
-            return new HashSet<ModuleDefinition>();
+            return new HashSet<AModuleDefinition>();
         }
 
         return ModuleSet;
@@ -86,9 +83,9 @@ public abstract class ModuleDefinition : Definition
 
     protected void AddDependencyModuleNames(ETargetPlatform InTargetPlatform, params string[] InModuleNames)
     {
-        IReadOnlyDictionary<string, ModuleDefinition> ModulesMap = OwnerProject.GetModules(InTargetPlatform);
+        IReadOnlyDictionary<string, AModuleDefinition> ModulesMap = OwnerProject.GetModules(InTargetPlatform);
 
-        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<ModuleDefinition>? ModuleSet))
+        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AModuleDefinition>? ModuleSet))
         {
             ModuleSet = [];
             _dependenciesPerPlatform.Add(InTargetPlatform, ModuleSet);
@@ -96,7 +93,7 @@ public abstract class ModuleDefinition : Definition
 
         foreach (string ModuleName in InModuleNames)
         {
-            if (!ModulesMap.TryGetValue(ModuleName, out ModuleDefinition? DependencyModule))
+            if (!ModulesMap.TryGetValue(ModuleName, out AModuleDefinition? DependencyModule))
             {
                 throw new MissingDependencyModuleException(ModuleName, OwnerProject.Name);
             }
@@ -187,7 +184,7 @@ public abstract class ModuleDefinition : Definition
         }
     }
 
-    internal void Configure(ProjectDefinition InOwnerProject, DirectoryReference InRootDirectory)
+    internal void Configure(AProjectDefinition InOwnerProject, DirectoryReference InRootDirectory)
     {
         if (_bIsConfigured) return;
 
@@ -203,7 +200,7 @@ public abstract class ModuleDefinition : Definition
 }
 
 public class MissingDependencyModuleException(string InModuleName, string InProjectName) 
-    : BaseException($"Module '{InModuleName}' not found in project '{InProjectName}'.");
-public class ShaderLibraryNotSupportedOnPlatformException(string InMessage) : BaseException(InMessage);
+    : ABaseException($"Module '{InModuleName}' not found in project '{InProjectName}'.");
+public class ShaderLibraryNotSupportedOnPlatformException(EModuleBinaryType InBinaryType) : ABaseException($"{InBinaryType}");
 public class UnsupportedDependencyForCodeModuleException(string InModuleName) 
-    : BaseException($"Module '{InModuleName}' not supported as code dependency.");
+    : ABaseException($"Module '{InModuleName}' not supported as code dependency.");

@@ -6,7 +6,7 @@ using Shared.Toolchains;
 
 namespace BuildTool.Compilation;
 
-public class CleanTask(ProjectDefinition InProjectDefinition, ModuleDefinition[] InModules, IToolchain InToolchain)
+public class CleanTask(AProjectDefinition InProjectDefinition, AModuleDefinition[] InModules, IToolchain InToolchain)
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;
     

@@ -32,12 +32,12 @@ public enum ETargetPlatformType
     GameConsole,
 }
 
-public interface ITargetPlatform
+public abstract class ATargetPlatform
 {
-    public string Name => Platform.ToString();
-    public ETargetPlatform Platform { get; }
-
-    public IToolchain Toolchain { get; }
+    public virtual string Name => Platform.ToString();
+    public abstract ETargetPlatform Platform { get; }
+    public abstract IToolchain Toolchain { get; }
+    public abstract bool bSupportsModularLinkage { get; }
 
     public static ETargetPlatformGroup GetPlatformGroup(ETargetPlatform InTargetPlatform)
     {
@@ -70,7 +70,7 @@ public interface ITargetPlatform
     }
 }
 
-public class PlatformNotSupportedException : BaseException
+public class PlatformNotSupportedException : ABaseException
 {
     public PlatformNotSupportedException() : base() {}
     public PlatformNotSupportedException(ETargetPlatform InTargetPlatform) : base($"{InTargetPlatform}") {}

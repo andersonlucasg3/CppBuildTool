@@ -13,7 +13,7 @@ using VisualStudio.Filters;
 using VisualStudio.Projects;
 using VisualStudio.Solutions;
 
-public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition, ITargetPlatform InTargetPlatform) : IProjectGenerator
+public class VisualStudioProjectGenerator(AProjectDefinition InProjectDefinition, ATargetPlatform InTargetPlatform) : IProjectGenerator
 {
     private readonly ECompileConfiguration[] _compileConfigurations = Enum.GetValues<ECompileConfiguration>();
 
@@ -25,19 +25,19 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         // string ProgramsDirectory = Path.Combine(Environment.CurrentDirectory, "Programs");
         FileReference[] CSharpProjects = [.. Directory.EnumerateFiles(Environment.CurrentDirectory, "*.csproj", SearchOption.AllDirectories)];
 
-        Dictionary<string, ModuleDefinition> Modules = [];
+        Dictionary<string, AModuleDefinition> Modules = [];
         Modules.AddFrom(InProjectDefinition.GetModules(ETargetPlatform.Any), InProjectDefinition.GetModules(InTargetPlatform.Platform));
 
-        Dictionary<ModuleDefinition, FileReference> ModuleVcxProjFileMap = Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
+        Dictionary<AModuleDefinition, FileReference> ModuleVcxProjFileMap = Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
 
         FileReference SolutionFile = $"{InProjectDefinition.Name}.sln";
         Solution Solution = GenerateSolutionFile(SolutionFile, CSharpProjects, ModuleVcxProjFileMap);
 
         Parallelization.ForEach([.. Solution.Projects], Project =>
         {
-            if (!Modules.TryGetValue(Project.ProjectName, out ModuleDefinition? Module)) return;
+            if (!Modules.TryGetValue(Project.ProjectName, out AModuleDefinition? Module)) return;
 
-            ModuleDefinition[] ModuleDependencies = [
+            AModuleDefinition[] ModuleDependencies = [
                 .. Module.GetDependencies(ETargetPlatform.Any),
                 .. Module.GetDependencies(InTargetPlatform.Platform)
             ];
@@ -48,7 +48,7 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         });
     }
 
-    private Solution GenerateSolutionFile(FileReference InSolutionFile, FileReference[] InCSharpProjectFiles, Dictionary<ModuleDefinition, FileReference> InModuleProjectFileMap)
+    private Solution GenerateSolutionFile(FileReference InSolutionFile, FileReference[] InCSharpProjectFiles, Dictionary<AModuleDefinition, FileReference> InModuleProjectFileMap)
     {
         IndentedStringBuilder StringBuilder = new();
 
@@ -78,25 +78,33 @@ public class VisualStudioProjectGenerator(ProjectDefinition InProjectDefinition,
         return Solution;
     }
 
-    private void GenerateVCXProj(string InProjectName, ModuleDefinition InModule, ModuleDefinition[] InModuleDependencies, SolutionProject InProject, SolutionProject[] Dependencies, FileReference InVcxProjFile)
+    private void GenerateVCXProj(string InProjectName, AModuleDefinition InModule, AModuleDefinition[] InModuleDependencies, SolutionProject InProject, SolutionProject[] Dependencies, FileReference InVcxProjFile)
     {
+        if (InProject.ProjectKind != ESolutionProjectKind.CppProject) return;
+
         IndentedStringBuilder StringBuilder = new();
 
         DirectoryReference[] DependenciesSourcesDirectories = [.. InModuleDependencies.Select(Dependency => Dependency.SourcesDirectory)];
 
         ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InModule.BinaryType);
+        SourceCollection.GatherSourceFiles(InModule.SourcesDirectory);
 
         Project Project = new(new ProjectDependencies
         {
-                ProjectName = InProjectName,
-                Project = InProject,
-                Dependencies = Dependencies,
-                BinaryType = InModule.BinaryType,
-                IntermediateDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Intermediate),
-                BinariesDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Binaries),
-                SourcesCollection = SourceCollection,
-                ProjectSourcesDirectory = InModule.SourcesDirectory,
-                DependenciesSourcesDirectories = DependenciesSourcesDirectories,
+            ProjectName = InProjectName,
+            Project = InProject,
+            Dependencies = Dependencies,
+            BinaryType = InModule.BinaryType,
+            IntermediateDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Intermediate),
+            BinariesDirectory = ProjectDirectories.Shared.CreateBaseDirectory(ECompileBaseDirectory.Binaries),
+            SourcesCollection = SourceCollection,
+            ProjectSourcesDirectory = InModule.SourcesDirectory,
+            DependenciesSourcesDirectories = DependenciesSourcesDirectories,
+            PreprocessorDefinitions = [
+                .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(InModule, InTargetPlatform.Platform),
+                .. InModule.GetCompilerDefinitions(ETargetPlatform.Any),
+                .. InModule.GetCompilerDefinitions(InTargetPlatform.Platform)
+            ]
         });
 
         Project.Build(StringBuilder);

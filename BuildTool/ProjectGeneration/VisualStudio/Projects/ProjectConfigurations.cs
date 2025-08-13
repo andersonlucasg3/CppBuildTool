@@ -18,17 +18,17 @@ public class ProjectConfigurations(ECompileConfiguration[] InCompileConfiguratio
     ];
 }
 
-public class ProjectConfiguration(ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : TTagGroup<Tag>
+public class ProjectConfiguration(ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : TTagGroup<ATag>
 {
     protected override Parameter[] Parameters => [
         new Parameter("Include", $"{InCompileConfiguration}|{InTargetPlatform}")
     ];
 
-    protected override Tag[] Contents => [
+    protected override ATag[] Contents => [
         new Configuration(InCompileConfiguration),
         new Platform(InTargetPlatform),
     ];
 }
 
-public class Configuration(ECompileConfiguration InConfiguration) : Tag(InConfiguration.ToString());
-public class Platform(ETargetPlatform InPlatform) : Tag(InPlatform.ToString());
+public class Configuration(ECompileConfiguration InConfiguration) : ATag(InConfiguration.ToString());
+public class Platform(ETargetPlatform InPlatform) : ATag(InPlatform.ToString());

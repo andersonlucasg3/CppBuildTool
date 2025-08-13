@@ -38,7 +38,7 @@ public class ClInclude(FileReference InFile, string InFilter) : TTagGroup<Source
     protected override SourceFilter[] Contents => [new SourceFilter(InFilter)];
 }
 
-public class SourceFilter(string InFilter) : Tag(InFilter)
+public class SourceFilter(string InFilter) : ATag(InFilter)
 {
     protected override string TagName => "Filter";
 }

@@ -2,11 +2,12 @@
 
 namespace Shared.Platforms;
 
-public class WindowsPlatform : IHostPlatform
+public class WindowsPlatform : AHostPlatform
 {
-    public ETargetPlatform Platform => ETargetPlatform.Windows;
-    public IToolchain Toolchain { get; }
-    public IReadOnlyDictionary<ETargetPlatform, ITargetPlatform> SupportedTargetPlatforms { get; }
+    public override IReadOnlyDictionary<ETargetPlatform, ATargetPlatform> SupportedTargetPlatforms { get; }
+    
+    public override ETargetPlatform Platform => ETargetPlatform.Windows;
+    public override IToolchain Toolchain { get; }
 
     public WindowsPlatform()
     {
@@ -14,7 +15,7 @@ public class WindowsPlatform : IHostPlatform
 
         AndroidToolchain AndroidToolchain = new();
 
-        SupportedTargetPlatforms = new Dictionary<ETargetPlatform, ITargetPlatform>
+        SupportedTargetPlatforms = new Dictionary<ETargetPlatform, ATargetPlatform>
         {
             { ETargetPlatform.Windows, this },
             { ETargetPlatform.Android, new AndroidPlatform(AndroidToolchain) },

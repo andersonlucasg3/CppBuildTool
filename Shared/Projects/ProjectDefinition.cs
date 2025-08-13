@@ -4,28 +4,28 @@ using IO;
 using Exceptions;
 using Shared.Platforms;
 
-public abstract class ProjectDefinition : Definition
+public abstract class AProjectDefinition : ADefinition
 {
     private bool _bIsConfigured = false;
 
-    private readonly Dictionary<ETargetPlatform, HashSet<ProjectDefinition>> _dependencyProjectsPerPlatform = [];
-    private readonly Dictionary<ETargetPlatform, Dictionary<string, ModuleDefinition>> _modulesPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, HashSet<AProjectDefinition>> _dependencyProjectsPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, Dictionary<string, AModuleDefinition>> _modulesPerPlatform = [];
 
-    public IReadOnlyDictionary<string, ModuleDefinition> GetModules(ETargetPlatform InTargetPlatform)
+    public IReadOnlyDictionary<string, AModuleDefinition> GetModules(ETargetPlatform InTargetPlatform)
     {
-        if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, ModuleDefinition>? ModuleMap))
+        if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, AModuleDefinition>? ModuleMap))
         {
-            return new Dictionary<string, ModuleDefinition>();
+            return new Dictionary<string, AModuleDefinition>();
         }
 
         return ModuleMap;
     }
 
-    public IReadOnlySet<ProjectDefinition> GetDependencyProjects(ETargetPlatform InTargetPlatform)
+    public IReadOnlySet<AProjectDefinition> GetDependencyProjects(ETargetPlatform InTargetPlatform)
     {
-        if (!_dependencyProjectsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<ProjectDefinition>? ProjectSet))
+        if (!_dependencyProjectsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AProjectDefinition>? ProjectSet))
         {
-            return new HashSet<ProjectDefinition>();
+            return new HashSet<AProjectDefinition>();
         }
 
         return ProjectSet;
@@ -34,11 +34,11 @@ public abstract class ProjectDefinition : Definition
     protected abstract void Configure();
 
     protected void AddProjectDependency<TProject>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
-        where TProject : ProjectDefinition
+        where TProject : AProjectDefinition
     {
         TProject Project = ProjectFinder.FindProject<TProject>();
 
-        if (!_dependencyProjectsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<ProjectDefinition>? ProjectSet))
+        if (!_dependencyProjectsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AProjectDefinition>? ProjectSet))
         {
             ProjectSet = [];
             _dependencyProjectsPerPlatform.Add(InTargetPlatform, ProjectSet);
@@ -46,18 +46,18 @@ public abstract class ProjectDefinition : Definition
 
         ProjectSet.Add(Project);
 
-        foreach (KeyValuePair<ETargetPlatform, Dictionary<string, ModuleDefinition>> Pair in Project._modulesPerPlatform)
+        foreach (KeyValuePair<ETargetPlatform, Dictionary<string, AModuleDefinition>> Pair in Project._modulesPerPlatform)
         {
             _modulesPerPlatform.Add(Pair.Key, Pair.Value);
         }
     }
 
     protected void AddModule<TModule>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any) 
-        where TModule : ModuleDefinition, new()
+        where TModule : AModuleDefinition, new()
     {
         TModule Module = new();
         
-        if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, ModuleDefinition>? ModuleMap))
+        if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, AModuleDefinition>? ModuleMap))
         {
             ModuleMap = [];
             _modulesPerPlatform.Add(InTargetPlatform, ModuleMap);
@@ -77,9 +77,9 @@ public abstract class ProjectDefinition : Definition
 
         Configure();
 
-        foreach (Dictionary<string, ModuleDefinition> Dict in _modulesPerPlatform.Values)
+        foreach (Dictionary<string, AModuleDefinition> Dict in _modulesPerPlatform.Values)
         {
-            foreach (ModuleDefinition Module in Dict.Values)
+            foreach (AModuleDefinition Module in Dict.Values)
             {
                 Module.Configure(this, SourcesDirectory);
             }
@@ -88,4 +88,4 @@ public abstract class ProjectDefinition : Definition
 }
 
 public class ModuleAlreadyDefinedException(string InModuleName) 
-    : BaseException($"Module '{InModuleName}' already exists in the project definition.");
+    : ABaseException($"Module '{InModuleName}' already exists in the project definition.");

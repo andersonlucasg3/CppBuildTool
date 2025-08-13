@@ -20,7 +20,7 @@ public class ClangCompileCommand
     [JsonPropertyName("output")] public string Output { get; set; } = "";
 }
 
-public class ClangProjectGenerator(ModuleDefinition[] InModules, ITargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
     : IProjectGenerator
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;

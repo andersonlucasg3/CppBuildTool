@@ -42,4 +42,4 @@ public class CommandLine
     }
 }
 
-public class MissingCommandException(string? InMessage) : BaseException(InMessage);
+public class MissingCommandException(string? InMessage) : ABaseException(InMessage);

@@ -52,7 +52,7 @@ public class LinkAction
 {
     public readonly FileReference LinkedFile;
     
-    public LinkAction(ModuleDefinition InModule, IToolchain InToolchain)
+    public LinkAction(AModuleDefinition InModule, IToolchain InToolchain)
     {
         string Prefix = InToolchain.GetBinaryTypePrefix(InModule.BinaryType);
         string Extension = InToolchain.GetBinaryTypeExtension(InModule.BinaryType);

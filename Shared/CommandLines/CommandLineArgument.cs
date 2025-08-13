@@ -5,9 +5,9 @@ namespace Shared.CommandLines;
 public interface ICommandLineArgument
 {
     public string Name { get; }
-    
+
     public string OriginalArgument { get; }
-    
+
     public virtual bool TryGetValue<T>(out T? Value)
     {
         throw new NotImplementedException();
@@ -42,7 +42,7 @@ public interface ICommandLineArgument
     {
         throw new NotImplementedException();
     }
-    
+
     public string? ToString()
     {
         return OriginalArgument;
@@ -57,7 +57,7 @@ public interface ICommandLineArgument
         }
 
         if (!InArgument.StartsWith('-')) throw new UnknownArgumentException(InArgument);
-        
+
         if (!InArgument.Contains('=')) return new ValuelessArgument(InArgument);
         if (InArgument.Contains(',')) return new MultiValueArgument(InArgument);
         return new SingleValueArgument(InArgument);
@@ -79,7 +79,7 @@ public sealed class CommandArgument(string InArgument) : ICommandLineArgument
 public sealed class ValuelessArgument(string InArgument) : ICommandLineArgument
 {
     public string OriginalArgument { get; } = InArgument;
-    
+
     public string Name { get; } = InArgument.Replace("-", "");
 
     public override string ToString()
@@ -193,7 +193,7 @@ public sealed class MultiValueArgument : ICommandLineArgument
     public int[] GetIntArrayValue()
     {
         int[] OutValue = new int[Value.Length];
-        for(int Index = 0; Index < OutValue.Length; Index++)
+        for (int Index = 0; Index < OutValue.Length; Index++)
         {
             OutValue[Index] = int.Parse(Value[Index]);
         }
@@ -216,5 +216,5 @@ public sealed class MultiValueArgument : ICommandLineArgument
     }
 }
 
-public class InvalidCommandException(string InMessage) : BaseException(InMessage);
-public class UnknownArgumentException(string InMessage) : BaseException(InMessage);
+public class InvalidCommandException(string InMessage) : ABaseException(InMessage);
+public class UnknownArgumentException(string InMessage) : ABaseException(InMessage);

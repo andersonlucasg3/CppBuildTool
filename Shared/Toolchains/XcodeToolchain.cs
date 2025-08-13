@@ -1,7 +1,6 @@
 namespace Shared.Toolchains;
 
 using IO;
-using Sources;
 using Projects;
 using Processes;
 using Exceptions;
@@ -10,7 +9,7 @@ using Compilers.Apple;
 using Shared.Platforms;
 
 
-public class XcodeToolchain : ClangToolchain
+public class XcodeToolchain : AClangToolchain
 {
     public const string IPhoneOSVersionMin = "17.0";
     public const string MacOSVersionMin = "13.4";
@@ -92,18 +91,18 @@ public class XcodeToolchain : ClangToolchain
         };
     }
 
-    public override string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform)
+    public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)
     {
         List<string> CompilerDefinitions = [];
 
         CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=");
 
-        ModuleDefinition[] Dependencies = [
+        AModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
             .. InModule.GetDependencies(InTargetPlatform)
         ];
 
-        foreach (ModuleDefinition Dependency in Dependencies)
+        foreach (AModuleDefinition Dependency in Dependencies)
         {
             CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=");
         }
@@ -135,5 +134,5 @@ public class XcodeToolchain : ClangToolchain
     }
 }
 
-public class XcodeNotInstalledException : BaseException;
-public class SourceFileExtensionNotSupportedException(string InMessage) : BaseException(InMessage);
+public class XcodeNotInstalledException : ABaseException;
+public class SourceFileExtensionNotSupportedException(string InMessage) : ABaseException(InMessage);

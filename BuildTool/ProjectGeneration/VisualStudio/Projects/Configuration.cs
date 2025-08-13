@@ -6,7 +6,7 @@ namespace BuildTool.ProjectGeneration.VisualStudio.Projects;
 
 using ProjectXml;
 
-public class ConfigurationPropertyGroup(EModuleBinaryType InBinaryType, ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : PropertyGroup
+public class ConfigurationPropertyGroup(EModuleBinaryType InBinaryType, ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : APropertyGroup
 {
     public readonly bool bUseDebugLibraries = InCompileConfiguration == ECompileConfiguration.Debug;
     public readonly string PlatformToolset = "v143";
@@ -18,7 +18,7 @@ public class ConfigurationPropertyGroup(EModuleBinaryType InBinaryType, ECompile
         new Parameter("Condition", $"'$(Configuration)|$(Platform)'=='{InCompileConfiguration}|{InTargetPlatform}'"),
     ];
 
-    protected override Tag[] Contents => [
+    protected override ATag[] Contents => [
         new ConfigurationType(InBinaryType),
         new UseDebugLibraries(bUseDebugLibraries),
         new PlatformToolset(PlatformToolset),
@@ -27,8 +27,8 @@ public class ConfigurationPropertyGroup(EModuleBinaryType InBinaryType, ECompile
     ];
 }
 
-public class ConfigurationType(EModuleBinaryType InBinaryType) : Tag(InBinaryType.ToString());
-public class UseDebugLibraries(bool bInUseDebugLibraries) : Tag(bInUseDebugLibraries.ToString());
-public class PlatformToolset(string InPlatformToolset) : Tag(InPlatformToolset);
-public class CharacterSet(string InCharacterSet) : Tag(InCharacterSet);
-public class WholeProgramOptimization(bool bInWholeProgramOptimization) : Tag(bInWholeProgramOptimization.ToString());
+public class ConfigurationType(EModuleBinaryType InBinaryType) : ATag(InBinaryType.ToString());
+public class UseDebugLibraries(bool bInUseDebugLibraries) : ATag(bInUseDebugLibraries.ToString());
+public class PlatformToolset(string InPlatformToolset) : ATag(InPlatformToolset);
+public class CharacterSet(string InCharacterSet) : ATag(InCharacterSet);
+public class WholeProgramOptimization(bool bInWholeProgramOptimization) : ATag(bInWholeProgramOptimization.ToString());

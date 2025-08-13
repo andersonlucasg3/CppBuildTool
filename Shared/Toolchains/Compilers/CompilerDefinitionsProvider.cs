@@ -8,7 +8,7 @@ using Shared.Extensions;
 
 public static class CompilerDefinitionsProvider
 {
-    public static string[] GetAutomaticCompilerDefinitions(ITargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, ModuleDefinition InModule)
+    public static string[] GetAutomaticCompilerDefinitions(ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, AModuleDefinition InModule)
     {
         return [
             .. InTargetPlatform.Toolchain.GetAutomaticModuleCompilerDefinitions(InModule, InTargetPlatform.Platform),
@@ -67,7 +67,7 @@ public static class CompilerDefinitionsProvider
 
             string GroupDefine = $"PLATFORM_GROUP_{TargetGroup.ToString().ToUpper()}";
 
-            ETargetPlatformGroup CurrentGroup = ITargetPlatform.GetPlatformGroup(InTargetPlatform);
+            ETargetPlatformGroup CurrentGroup = ATargetPlatform.GetPlatformGroup(InTargetPlatform);
 
             int Value = CurrentGroup == TargetGroup ? 1 : 0;
 
@@ -91,7 +91,7 @@ public static class CompilerDefinitionsProvider
 
             string TypeDefine = $"PLATFORM_TYPE_{TargetType.ToString().ToUpper()}";
 
-            ETargetPlatformType CurrentType = ITargetPlatform.GetPlatformType(InTargetPlatform);
+            ETargetPlatformType CurrentType = ATargetPlatform.GetPlatformType(InTargetPlatform);
 
             int Value = CurrentType == TargetType ? 1 : 0;
 

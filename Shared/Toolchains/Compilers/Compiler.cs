@@ -1,5 +1,3 @@
-using Shared.IO;
-
 namespace Shared.Toolchains.Compilers;
 
 public interface ICompiler

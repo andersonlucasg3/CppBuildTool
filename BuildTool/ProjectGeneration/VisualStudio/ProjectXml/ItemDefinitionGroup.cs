@@ -4,20 +4,21 @@ using Shared.Platforms;
 
 namespace BuildTool.ProjectGeneration.VisualStudio.ProjectXml;
 
-public class ItemDefinitionGroup(DirectoryReference[] InIncludeDirectories, ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : TTagGroup<ItemDefinitionGroup.ClCompile>
+public class ItemDefinitionGroup(string[] InPreprocessorDefinitions, DirectoryReference[] InIncludeDirectories, ECompileConfiguration InCompileConfiguration, ETargetPlatform InTargetPlatform) : TTagGroup<ItemDefinitionGroup.ClCompile>
 {
     protected override Parameter[] Parameters => [ 
 		new Parameter("Condition", $"'$(Configuration)|$(Platform)'=='{InCompileConfiguration}|{InTargetPlatform}'"),
     ];
 
     protected override ClCompile[] Contents => [
-		new ClCompile(InIncludeDirectories)
+		new ClCompile(InPreprocessorDefinitions, InIncludeDirectories)
 	];
 
-    public class ClCompile(DirectoryReference[] InIncludeDirectories) : TTagGroup<Tag>
+    public class ClCompile(string[] InPreprocessorDefinitions, DirectoryReference[] InIncludeDirectories) : TTagGroup<ATag>
     {
-        protected override Tag[] Contents => [
-            .. InIncludeDirectories.Select(InIncludeDirectories => new AdditionalIncludeDirectories(InIncludeDirectories)),
+        protected override ATag[] Contents => [
+            .. InPreprocessorDefinitions.Select(Definition => new PreprocessorDefinitions(Definition)),
+            .. InIncludeDirectories.Select(IncludeDirectory => new AdditionalIncludeDirectories(IncludeDirectory)),
             new LanguageStandard(), new LanguageStandard_C(),
         ];
     }

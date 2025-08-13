@@ -8,7 +8,7 @@ namespace Shared.Toolchains;
 
 public struct CompileCommandInfo
 {
-    public required ModuleDefinition Module;
+    public required AModuleDefinition Module;
     public required DirectoryReference SourcesDirectory;
     public required FileReference TargetFile;
     public required FileReference DependencyFile;
@@ -22,7 +22,7 @@ public struct CompileCommandInfo
 public struct LinkCommandInfo
 {
     public required ETargetPlatform Platform;
-    public required ModuleDefinition Module;
+    public required AModuleDefinition Module;
     public required FileReference LinkedFile;
     public required FileReference[] ObjectFiles;
     public required DirectoryReference[] LibrarySearchPaths;
@@ -38,7 +38,7 @@ public interface IToolchain
     public string GetBinaryTypePrefix(EModuleBinaryType BinaryType);
     public string GetObjectFileExtension(FileReference InSourceFile);
 
-    public string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform);
+    public string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform);
 
     public ProcessResult Compile(CompileCommandInfo InCompileCommandInfo);
     public ProcessResult Link(LinkCommandInfo InLinkCommandInfo);

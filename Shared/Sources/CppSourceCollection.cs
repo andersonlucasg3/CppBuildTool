@@ -33,11 +33,11 @@ public class CppSourceCollection : ISourceCollection
 
         List<ETargetPlatformGroup> ExcludedPlatformGroupsList = [.. Enum.GetValues<ETargetPlatformGroup>()];
         ExcludedPlatformGroupsList.Remove(ETargetPlatformGroup.Any);
-        ExcludedPlatformGroupsList.Remove(ITargetPlatform.GetPlatformGroup(InTargetPlatform));
+        ExcludedPlatformGroupsList.Remove(ATargetPlatform.GetPlatformGroup(InTargetPlatform));
 
         List<ETargetPlatformType> ExcludedPlatformTypesList = [.. Enum.GetValues<ETargetPlatformType>()];
         ExcludedPlatformTypesList.Remove(ETargetPlatformType.Any);
-        ExcludedPlatformTypesList.Remove(ITargetPlatform.GetPlatformType(InTargetPlatform));
+        ExcludedPlatformTypesList.Remove(ATargetPlatform.GetPlatformType(InTargetPlatform));
 
         ExcludedPlatforms = [.. ExcludedPlatformsList.Select(Each => $"/{Each.ToSourcePlatformName()}/")];
         ExcludedPlatformGroups = [.. ExcludedPlatformGroupsList.Select(Each => $"/{Each}/")];

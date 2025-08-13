@@ -53,4 +53,4 @@ public static class ExecutableCommandExtensions
     }
 }
 
-public class MissingRequiredArgumentException(string InMessage) : BaseException(InMessage);
+public class MissingRequiredArgumentException(string InMessage) : ABaseException(InMessage);

@@ -18,7 +18,7 @@ public interface ISourceCollection
 
     public static ISourceCollection CreateSourceCollection(ETargetPlatform InTargetPlatform, EModuleBinaryType InBinaryType)
     {
-        return ITargetPlatform.GetPlatformGroup(InTargetPlatform) switch
+        return ATargetPlatform.GetPlatformGroup(InTargetPlatform) switch
         {
             ETargetPlatformGroup.Apple => InBinaryType switch
             {

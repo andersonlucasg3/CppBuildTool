@@ -2,7 +2,7 @@
 
 using ProjectXml;
 
-public class Import(string InProject) : Tag
+public class Import(string InProject) : ATag
 {
     protected override Parameter[] Parameters { get; } = [
         new Parameter("Project", InProject),

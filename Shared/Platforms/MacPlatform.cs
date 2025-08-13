@@ -2,19 +2,19 @@ using Shared.Toolchains;
 
 namespace Shared.Platforms;
 
-public class MacPlatform : IHostPlatform
+public class MacPlatform : AHostPlatform
 {
-    public IReadOnlyDictionary<ETargetPlatform, ITargetPlatform> SupportedTargetPlatforms { get; }
+    public override IReadOnlyDictionary<ETargetPlatform, ATargetPlatform> SupportedTargetPlatforms { get; }
 
-    public ETargetPlatform Platform => ETargetPlatform.macOS;
-    public IToolchain Toolchain { get; }
+    public override ETargetPlatform Platform => ETargetPlatform.macOS;
+    public override IToolchain Toolchain { get; }
 
     public MacPlatform()
     {
         XcodeToolchain XcodeToolchain = new();
         AndroidToolchain AndroidToolchain = new();
         
-        SupportedTargetPlatforms = new Dictionary<ETargetPlatform, ITargetPlatform>
+        SupportedTargetPlatforms = new Dictionary<ETargetPlatform, ATargetPlatform>
         {
             { ETargetPlatform.macOS, this },
             { ETargetPlatform.iOS, new IOSPlatform(XcodeToolchain) },

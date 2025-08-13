@@ -28,6 +28,7 @@ public class SolutionProject(
 
     public readonly string ProjectName = InProjectName;
     public readonly string ProjectPath = InProjectPath;
+    public readonly ESolutionProjectKind ProjectKind = InProjectKind;
 
     public readonly ECompileConfiguration[] CompileConfigurations = InCompileConfigurations ?? [];
     public readonly ETargetPlatform[] TargetPlatforms = InTargetPlatforms ?? [];

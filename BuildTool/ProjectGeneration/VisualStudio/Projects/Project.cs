@@ -24,6 +24,8 @@ public struct ProjectDependencies
 
     public required DirectoryReference ProjectSourcesDirectory;
     public required DirectoryReference[] DependenciesSourcesDirectories;
+
+    public required string[] PreprocessorDefinitions;
 }
 
 public class Project : TTagGroup<IIndentedStringBuildable>
@@ -62,10 +64,14 @@ public class Project : TTagGroup<IIndentedStringBuildable>
             {
                 ETargetPlatform Platform = InProjectDependencies.Project.TargetPlatforms[PlatformIndex];
 
-                ItemDefinitionGroup NewItemGroup = new([
-                    InProjectDependencies.ProjectSourcesDirectory.RelativePath,
-                    .. InProjectDependencies.DependenciesSourcesDirectories.Select(DependencySourceDirectory => DependencySourceDirectory.RelativePath)
-                ], Configuration, Platform);
+                ItemDefinitionGroup NewItemGroup = new(
+                    InProjectDependencies.PreprocessorDefinitions,
+                    [
+                        InProjectDependencies.ProjectSourcesDirectory.RelativePath,
+                        .. InProjectDependencies.DependenciesSourcesDirectories.Select(DependencySourceDirectory => DependencySourceDirectory.RelativePath)
+                    ],
+                    Configuration,
+                    Platform);
 
                 ContentsList.Add(NewItemGroup);
             }

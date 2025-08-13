@@ -1,10 +1,16 @@
+using Shared.Projects;
 using Shared.Toolchains;
 
 namespace Shared.Platforms;
 
-public class IOSPlatform(XcodeToolchain InToolchain) : ITargetPlatform
+public class IOSPlatform(XcodeToolchain InToolchain) : AMobilePlatform
 {
-    public virtual ETargetPlatform Platform => ETargetPlatform.iOS;
+    public override ETargetPlatform Platform => ETargetPlatform.iOS;
 
-    public IToolchain Toolchain { get; } = InToolchain;
+    public override IToolchain Toolchain { get; } = InToolchain;
+
+    public override AModuleDefinition GetSingleModuleInstance()
+    {
+        throw new NotImplementedException();
+    }
 }

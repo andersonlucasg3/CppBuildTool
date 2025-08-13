@@ -6,10 +6,10 @@ using Platforms;
 using Exceptions;
 using Compilers.Android;
 
-public class AndroidToolchain : ClangToolchain
+public class AndroidToolchain : AClangToolchain
 {
     const string SupportedAndroidNdkVersion = "29.0.13846066";
-    const int AndroidNdkApiVersion = 35;
+    // const int AndroidNdkApiVersion = 35;
     const int MinimumSupportedAndroidNdkVersion = 21;
     const string CompilingAndroidArch = "aarch64"; // TODO: this should be configurable
 
@@ -19,12 +19,12 @@ public class AndroidToolchain : ClangToolchain
     {
         string AndroidPrebuiltPlatform;
         string ExpectedAndroidSdkPath;
-        if (IHostPlatform.IsWindows())
+        if (AHostPlatform.IsWindows())
         {
             AndroidPrebuiltPlatform = "windows-x86_64";
             ExpectedAndroidSdkPath = Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE")!, "AppData", "Local", "Android", "Sdk");
         }
-        else if (IHostPlatform.IsMacOS())
+        else if (AHostPlatform.IsMacOS())
         {
             AndroidPrebuiltPlatform = "darwin-x86_64";
             ExpectedAndroidSdkPath = Path.Combine(Environment.GetEnvironmentVariable("HOME")!, "Library", "Android", "sdk");
@@ -54,29 +54,29 @@ public class AndroidToolchain : ClangToolchain
 
         DirectoryReference PrebuiltPlatformRoot = AndroidNdk.Combine("toolchains", "llvm", "prebuilt", AndroidPrebuiltPlatform);
 
-        _compiler = new(PrebuiltPlatformRoot, CompilingAndroidArch, AndroidNdkApiVersion, MinimumSupportedAndroidNdkVersion);
+        _compiler = new(PrebuiltPlatformRoot, CompilingAndroidArch, MinimumSupportedAndroidNdkVersion);
     }
 
     public override string GetBinaryTypeExtension(EModuleBinaryType BinaryType)
     {
         return BinaryType switch
         {
-            EModuleBinaryType.Application => throw new NotSupportedException("Android does not support EModuleBinaryType.Application"),
+            EModuleBinaryType.Application => ".so", // Android only supports shared libraries as targets
             EModuleBinaryType.StaticLibrary => ".a",
             EModuleBinaryType.DynamicLibrary => ".so",
             _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
         };
     }
 
-    public override string GetBinaryTypePrefix(EModuleBinaryType BinaryType)
+    public override string GetBinaryTypePrefix(EModuleBinaryType InBinaryType)
     {
-        return BinaryType switch
+        return InBinaryType switch
         {
-            EModuleBinaryType.Application => "",
+            EModuleBinaryType.Application => "lib",
             EModuleBinaryType.StaticLibrary => "lib",
             EModuleBinaryType.DynamicLibrary => "lib",
-            EModuleBinaryType.ShaderLibrary => "",
-            _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
+            EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException(InBinaryType),
+            _ => throw new ArgumentOutOfRangeException(nameof(InBinaryType), InBinaryType, null)
         };
     }
 
@@ -95,18 +95,18 @@ public class AndroidToolchain : ClangToolchain
         return _compiler.GetObjectFileExtension();
     }
 
-    public override string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform)
+    public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)
     {
         List<string> CompilerDefinitions = [];
 
         CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=");
 
-        ModuleDefinition[] Dependencies = [
+        AModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
             .. InModule.GetDependencies(InTargetPlatform)
         ];
 
-        foreach (ModuleDefinition Dependency in Dependencies)
+        foreach (AModuleDefinition Dependency in Dependencies)
         {
             CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=");
         }
@@ -115,4 +115,4 @@ public class AndroidToolchain : ClangToolchain
     }
 }
 
-public class AndroidSdkNotInstalledException(bool bHaveSdk, bool bHaveNdk) : BaseException($"HaveSdk: {bHaveSdk}, HaveNdk: {bHaveNdk}");
+public class AndroidSdkNotInstalledException(bool bHaveSdk, bool bHaveNdk) : ABaseException($"HaveSdk: {bHaveSdk}, HaveNdk: {bHaveNdk}");

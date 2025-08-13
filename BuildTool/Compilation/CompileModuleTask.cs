@@ -9,11 +9,11 @@ using Shared.Toolchains.Compilers;
 
 namespace BuildTool.Compilation;
 
-public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ITargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
 {
     public void Compile(bool bPrintCompileCommands)
     {
-        ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InInfo.Module.BinaryType);
+        ISourceCollection SourceCollection = InInfo.SourceCollection;
 
         SourceCollection.GatherSourceFiles(InInfo.Module.SourcesDirectory);
 

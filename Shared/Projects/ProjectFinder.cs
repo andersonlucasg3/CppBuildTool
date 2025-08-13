@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Diagnostics;
 
 namespace Shared.Projects;
 
@@ -9,11 +8,11 @@ using Exceptions;
 
 public static class ProjectFinder 
 {
-    class CSharpProjectCompilationException(string InMessage) : BaseException(InMessage);
-    class FailedToCreateProjectInstanceException(string InMessage) : BaseException(InMessage);
+    class CSharpProjectCompilationException(string InMessage) : ABaseException(InMessage);
+    class FailedToCreateProjectInstanceException(string InMessage) : ABaseException(InMessage);
 
-    private static readonly Dictionary<string, ProjectDefinition> _loadedProjectsByName = [];
-    private static readonly Dictionary<Type, ProjectDefinition> _loadedProjectsByType = [];
+    private static readonly Dictionary<string, AProjectDefinition> _loadedProjectsByName = [];
+    private static readonly Dictionary<Type, AProjectDefinition> _loadedProjectsByType = [];
 
     public static void CompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
@@ -52,11 +51,11 @@ public static class ProjectFinder
             Assembly ProjectAssembly = Assembly.LoadFile(DllFile.PlatformPath);
 
             Type[] Types = ProjectAssembly.GetTypes();
-            Type[] ProjectTypes = [.. Types.Where(Type => Type.IsClass && !Type.IsAbstract && Type.IsSubclassOf(typeof(ProjectDefinition)))];
+            Type[] ProjectTypes = [.. Types.Where(Type => Type.IsClass && !Type.IsAbstract && Type.IsSubclassOf(typeof(AProjectDefinition)))];
 
             foreach (Type ProjectType in ProjectTypes)
             {
-                if (Activator.CreateInstance(ProjectType) is not ProjectDefinition Project)
+                if (Activator.CreateInstance(ProjectType) is not AProjectDefinition Project)
                 {
                     throw new ProjectNotFoundException($"Could not create instance of project: {ProjectType.Name}");
                 }
@@ -70,11 +69,11 @@ public static class ProjectFinder
     }
 
     public static TProject FindProject<TProject>()
-        where TProject : ProjectDefinition
+        where TProject : AProjectDefinition
     {
         Type ProjectType = typeof(TProject);
 
-        if (!_loadedProjectsByType.TryGetValue(ProjectType, out ProjectDefinition? Project))
+        if (!_loadedProjectsByType.TryGetValue(ProjectType, out AProjectDefinition? Project))
         {
             throw new ProjectNotFoundException($"Missing project {ProjectType.Name}");
         }
@@ -84,9 +83,9 @@ public static class ProjectFinder
         return (TProject)Project;
     }
 
-    public static ProjectDefinition FindProject(string InProjectName)
+    public static AProjectDefinition FindProject(string InProjectName)
     {
-        if (!_loadedProjectsByName.TryGetValue(InProjectName, out ProjectDefinition? Project))
+        if (!_loadedProjectsByName.TryGetValue(InProjectName, out AProjectDefinition? Project))
         {
             throw new ProjectNotFoundException($"Missing project {InProjectName}");
         }
@@ -97,4 +96,4 @@ public static class ProjectFinder
     }
 }
 
-public class ProjectNotFoundException(string InMessage) : BaseException(InMessage);
+public class ProjectNotFoundException(string InMessage) : ABaseException(InMessage);

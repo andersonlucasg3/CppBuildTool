@@ -2,11 +2,11 @@ using System.Runtime.InteropServices;
 
 namespace Shared.Platforms;
 
-public interface IHostPlatform : ITargetPlatform
+public abstract class AHostPlatform : ADesktopPlatform
 {
-    public IReadOnlyDictionary<ETargetPlatform, ITargetPlatform> SupportedTargetPlatforms { get; }
+    public abstract IReadOnlyDictionary<ETargetPlatform, ATargetPlatform> SupportedTargetPlatforms { get; }
 
-    public static IHostPlatform GetHost()
+    public static AHostPlatform GetHost()
     {
         if (IsMacOS())
         {

@@ -9,7 +9,7 @@ public class Sources(ISourceCollection InSourceCollection) : TItemGroup<Sources.
 
     protected override ClCompile[] Contents => [.. InSourceCollection.SourceFiles.Select(SourceFile => new ClCompile(SourceFile))];
 
-    public class ClCompile(FileReference InFile) : Tag
+    public class ClCompile(FileReference InFile) : ATag
     {
         protected override Parameter[] Parameters => [
             new Parameter("Include", $"$(SolutionDir){InFile.RelativePath}"),
@@ -25,7 +25,7 @@ public class Headers(ISourceCollection InSourceCollection) : TItemGroup<Headers.
         .. InSourceCollection.HeaderFiles.Select(HeaderFile => new ClInclude(HeaderFile))
     ];
 
-    public class ClInclude(FileReference InFile) : Tag
+    public class ClInclude(FileReference InFile) : ATag
     {
         protected override Parameter[] Parameters => [
             new Parameter("Include", $"$(SolutionDir){InFile.RelativePath}"),

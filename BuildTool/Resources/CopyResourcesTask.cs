@@ -3,7 +3,7 @@ using Shared.Projects;
 
 namespace BuildTool.Resources;
 
-public class CopyResourcesTask(ModuleDefinition InModule)
+public class CopyResourcesTask(AModuleDefinition InModule)
 {
     public void Copy()
     {

@@ -11,7 +11,7 @@ using Compilers.Windows;
 using Platforms;
 using Shared.Extensions;
 
-public partial class VisualStudioToolchain : ClangToolchain
+public partial class VisualStudioToolchain : AClangToolchain
 {
     private readonly string _vsToolchainRoot;
     private readonly string _clangPath;
@@ -90,18 +90,18 @@ public partial class VisualStudioToolchain : ClangToolchain
         return _windowsCompiler.GetObjectFileExtension();
     }
 
-    public override string[] GetAutomaticModuleCompilerDefinitions(ModuleDefinition InModule, ETargetPlatform InTargetPlatform)
+    public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)
     {
         List<string> CompilerDefinitions = [];
 
         CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=__declspec(dllexport)".Quoted());
 
-        ModuleDefinition[] Dependencies = [
+        AModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
             .. InModule.GetDependencies(InTargetPlatform)
         ];
 
-        foreach (ModuleDefinition Dependency in Dependencies)
+        foreach (AModuleDefinition Dependency in Dependencies)
         {
             CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)".Quoted());
         }
@@ -145,7 +145,7 @@ public partial class VisualStudioToolchain : ClangToolchain
     private static partial Regex GetHeaderRegex();
 }
 
-public class VisualStudioToolchainNotFoundException : BaseException
+public class VisualStudioToolchainNotFoundException : ABaseException
 {
     public VisualStudioToolchainNotFoundException() : base() { }
     public VisualStudioToolchainNotFoundException(string InMessage) : base(InMessage) { }
