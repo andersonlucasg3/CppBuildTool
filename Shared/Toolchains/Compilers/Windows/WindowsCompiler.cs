@@ -30,12 +30,19 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
 
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
+        AModuleDefinition[] DepLibNames = [
+            .. InLinkCommandInfo.Module.GetDependencies(Platforms.ETargetPlatform.Any),
+            .. InLinkCommandInfo.Module.GetDependencies(InLinkCommandInfo.TargetPlatform)
+        ];
+
+        // TODO: make the linker command reference all dependency module generated libs
+
         return [
             _linkPath,
             .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath.Quoted()),
             GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
             $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath.Quoted()}",
-            .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}")
+            .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}"),
         ];
     }
 
@@ -58,7 +65,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
     {
         return InBinaryType switch
         {
-            EModuleBinaryType.Application => "/EXE",
+            EModuleBinaryType.Application => "",
             EModuleBinaryType.StaticLibrary => throw new NotSupportedException($"{InBinaryType}"),
             EModuleBinaryType.DynamicLibrary => "/DLL",
             EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException(InBinaryType),
