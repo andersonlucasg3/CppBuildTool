@@ -1,5 +1,4 @@
-﻿using Shared.Projects;
-using Shared.Platforms;
+﻿using Shared.Platforms;
 using Shared.Compilation;
 
 namespace Shared.Projects.VisualStudio.Projecs;

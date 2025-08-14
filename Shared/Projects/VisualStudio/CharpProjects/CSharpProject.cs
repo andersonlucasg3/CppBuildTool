@@ -4,27 +4,25 @@ using Shared.Projects.VisualStudio.ProjectXml;
 
 namespace Shared.Projects.VisualStudio.CharpProjects;
 
-public class CSharpProject : TTagGroup<IIndentedStringBuildable>
+public class CSharpProject(DirectoryReference InProjectRoot, FileReference[] InSourceFiles) : TTagGroup<IIndentedStringBuildable>
 {
     protected override string TagName => "Project";
 
     protected override Parameter[] Parameters { get; } = [new Parameter("Sdk", "Microsoft.NET.Sdk")];
 
-    protected override IIndentedStringBuildable[] Contents { get; }
+    protected override IIndentedStringBuildable[] Contents { get; } = [
+        new PropertyGroup(),
+        new ItemGroup(InProjectRoot, InSourceFiles),
+    ];
 
-    public CSharpProject(DirectoryReference InProjectRoot)
-    {
-        Contents = [
-            new PropertyGroup(),
-            new ItemGroup(InProjectRoot),
-        ];
-    }
-
-    class ItemGroup(DirectoryReference InProjectRoot) : APropertyGroup
+    class ItemGroup(DirectoryReference InProjectRoot, FileReference[] InSourceFiles) : APropertyGroup
     {
         protected override string TagName => "ItemGroup";
 
-        protected override ATag[] Contents => [ new Compile(InProjectRoot) ];
+        protected override ATag[] Contents => [
+            .. InSourceFiles.Select(Each => new Compile(Each)),
+            new ProjectReference(InProjectRoot),
+        ];
     }
 
     class PropertyGroup : APropertyGroup
@@ -37,9 +35,16 @@ public class CSharpProject : TTagGroup<IIndentedStringBuildable>
         ];
     }
 
-    class Compile(DirectoryReference InProjectRoot) : ATag
+    class Compile(FileReference InSourceFile) : ATag
     {
-        protected override Parameter[] Parameters => [ new Parameter("Include", InProjectRoot.Combine("**/*.cs").PlatformPath) ];
+        protected override Parameter[] Parameters => [ new Parameter("Include", InSourceFile.PlatformPath) ];
+    }
+
+    class ProjectReference(DirectoryReference InProjectRoot) : ATag
+    {
+        protected override Parameter[] Parameters => [
+            new Parameter("Include", InProjectRoot.CombineFile("Programs", "DotNet", "ProjectTools", "Shared", "Shared.csproj").PlatformPath)
+        ];
     }
 
     class CustomTag(string InName, string InValue) : ATag(InValue)

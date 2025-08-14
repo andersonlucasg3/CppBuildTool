@@ -3,10 +3,10 @@ using System.Reflection;
 namespace Shared.Projects;
 
 using IO;
+using Misc;
 using Processes;
 using Exceptions;
-using Shared.Projects.VisualStudio.CharpProjects;
-using Shared.Misc;
+using VisualStudio.CharpProjects;
 
 public static class ProjectFinder 
 {
@@ -18,33 +18,41 @@ public static class ProjectFinder
 
     public static void CreateAndCompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
+        DirectoryReference IntermediateBinariesDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpBinaries");
         DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpProjects");
 
+        if (!IntermediateBinariesDirectory.bExists) IntermediateBinariesDirectory.Create();
+        if (!IntermediateProjectsDirectory.bExists) IntermediateProjectsDirectory.Create();
+
+        DirectoryReference RootProjectDirectory = InProjectRootDirectory.Combine(InProjectName);
+
+        FileReference[] AllCSharpSources = [
+            .. RootProjectDirectory.EnumerateFiles("*.Project.cs", SearchOption.AllDirectories),
+            .. RootProjectDirectory.EnumerateFiles("*.Module.cs", SearchOption.AllDirectories),
+        ];
+
         FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"{InProjectName}.csproj");
-
         IndentedStringBuilder StringBuilder = new();
-
-        CSharpProject CSharpProject = new(InProjectRootDirectory);
+        CSharpProject CSharpProject = new(InProjectRootDirectory, AllCSharpSources);
         CSharpProject.Build(StringBuilder);
-
         InCSharpProjectFile.WriteAllText(StringBuilder.ToString());
 
         ProcessResult ProcessResult = ProcessExecutorExtension.Run([
             "dotnet",
             "build", $"{InCSharpProjectFile.PlatformPath}",
             "-c", "Debug",
-            "-o", $"{IntermediateProjectsDirectory.PlatformPath}",
+            "-o", $"{IntermediateBinariesDirectory.PlatformPath}",
         ], true);
 
         if (!ProcessResult.bSuccess) throw new CSharpProjectCompilationException(ProcessResult.StandardOutput);
 
         // the state of the directory was changed externally so we need to update it manually.
-        IntermediateProjectsDirectory.UpdateExistance();
+        IntermediateBinariesDirectory.UpdateExistance();
     }
 
     public static void LoadProjects(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
-        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpProjects");
+        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpBinaries");
 
         FileReference[] DllFiles = IntermediateProjectsDirectory.EnumerateFiles("*.dll", SearchOption.TopDirectoryOnly);
 

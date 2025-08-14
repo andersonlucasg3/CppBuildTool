@@ -1,7 +1,6 @@
 ﻿using Shared.IO;
 using Shared.Misc;
 using Shared.Sources;
-using Shared.Projects;
 using Shared.Platforms;
 using Shared.Compilation;
 
