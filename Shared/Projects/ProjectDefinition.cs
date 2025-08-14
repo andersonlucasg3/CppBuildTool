@@ -3,6 +3,8 @@ namespace Shared.Projects;
 using IO;
 using Exceptions;
 using Shared.Platforms;
+using System.Reflection;
+
 
 public abstract class AProjectDefinition : ADefinition
 {
@@ -48,7 +50,10 @@ public abstract class AProjectDefinition : ADefinition
 
         foreach (KeyValuePair<ETargetPlatform, Dictionary<string, AModuleDefinition>> Pair in Project._modulesPerPlatform)
         {
-            _modulesPerPlatform.Add(Pair.Key, Pair.Value);
+            foreach (KeyValuePair<string, AModuleDefinition> ModulePair in Pair.Value)
+            {
+                AddModuleInternal(Pair.Key, ModulePair.Value);
+            }
         }
     }
 
@@ -56,14 +61,21 @@ public abstract class AProjectDefinition : ADefinition
         where TModule : AModuleDefinition, new()
     {
         TModule Module = new();
-        
+
+        Module.SetOwnerProject(this);
+
+        AddModuleInternal(InTargetPlatform, Module);
+    }
+
+    private void AddModuleInternal(ETargetPlatform InTargetPlatform, AModuleDefinition InModule)
+    {
         if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, AModuleDefinition>? ModuleMap))
         {
             ModuleMap = [];
             _modulesPerPlatform.Add(InTargetPlatform, ModuleMap);
         }
 
-        ModuleMap.Add(Module.Name, Module);
+        ModuleMap.Add(InModule.Name, InModule);
     }
 
     internal void Configure(DirectoryReference InRootDirectory)
@@ -81,7 +93,9 @@ public abstract class AProjectDefinition : ADefinition
         {
             foreach (AModuleDefinition Module in Dict.Values)
             {
-                Module.Configure(this, SourcesDirectory);
+                if (Module.OwnerProject != this) continue;
+
+                Module.Configure(SourcesDirectory);
             }
         }
     }

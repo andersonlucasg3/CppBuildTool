@@ -30,7 +30,8 @@ param(
     [switch] $Recompile,
     [switch] $Relink,
     [switch] $PrintCompileCommands,
-    [switch] $PrintLinkCommands
+    [switch] $PrintLinkCommands,
+    [switch] $ProjectToolsOnly
 )
 
 . $PSScriptRoot/Commons.ps1
@@ -39,6 +40,13 @@ CompileProjectTools -ProjectName $Project
 
 if (-not $?)
 {
+    return;
+}
+
+if ($ProjectToolsOnly)
+{
+    Write-Host "Project tools only compilation requested. Exiting."
+
     return;
 }
 

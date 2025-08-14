@@ -26,10 +26,14 @@ public static class ProjectFinder
 
         DirectoryReference RootProjectDirectory = InProjectRootDirectory.Combine(InProjectName);
 
+        FileReference[] ProjectsSources = RootProjectDirectory.EnumerateFiles("*.Project.cs", SearchOption.AllDirectories);
+
         FileReference[] AllCSharpSources = [
-            .. RootProjectDirectory.EnumerateFiles("*.Project.cs", SearchOption.AllDirectories),
+            .. ProjectsSources,
             .. RootProjectDirectory.EnumerateFiles("*.Module.cs", SearchOption.AllDirectories),
         ];
+
+        Dictionary<string, FileReference> ProjectsNameSourcesMap = ProjectsSources.ToDictionary(Each => Each.NameWithoutExtension.Replace(".", ""));
 
         FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"{InProjectName}.csproj");
         IndentedStringBuilder StringBuilder = new();
@@ -48,18 +52,14 @@ public static class ProjectFinder
 
         // the state of the directory was changed externally so we need to update it manually.
         IntermediateBinariesDirectory.UpdateExistance();
-    }
+        IntermediateProjectsDirectory.UpdateExistance();
 
-    public static void LoadProjects(DirectoryReference InProjectRootDirectory, string InProjectName)
-    {
-        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpBinaries");
-
-        FileReference[] DllFiles = IntermediateProjectsDirectory.EnumerateFiles("*.dll", SearchOption.TopDirectoryOnly);
+        FileReference[] DllFiles = IntermediateBinariesDirectory.EnumerateFiles("*.dll", SearchOption.TopDirectoryOnly);
 
         AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
         {
             AssemblyName AssemblyName = new(args.Name);
-            FileReference DllFile = IntermediateProjectsDirectory.CombineFile($"{AssemblyName.Name!}.dll");
+            FileReference DllFile = IntermediateBinariesDirectory.CombineFile($"{AssemblyName.Name!}.dll");
             return DllFile.bExists ? Assembly.LoadFile(DllFile.PlatformPath) : null;
         };
 
@@ -81,6 +81,8 @@ public static class ProjectFinder
                 {
                     throw new FailedToCreateProjectInstanceException($"Project type already created: {ProjectType.Name}");
                 }
+
+                Project.Configure(ProjectsNameSourcesMap[Project.GetType().Name].Directory.GetParent()!);
             }
         }
     }
@@ -95,8 +97,6 @@ public static class ProjectFinder
             throw new ProjectNotFoundException($"Missing project {ProjectType.Name}");
         }
 
-        Project.Configure(Environment.CurrentDirectory);
-
         return (TProject)Project;
     }
 
@@ -106,8 +106,6 @@ public static class ProjectFinder
         {
             throw new ProjectNotFoundException($"Missing project {InProjectName}");
         }
-
-        Project.Configure(Environment.CurrentDirectory);
 
         return Project;
     }

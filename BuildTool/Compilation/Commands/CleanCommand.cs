@@ -31,7 +31,6 @@ public class Clean : IExecutableCommand
         
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
         ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
-        ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
         AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
         

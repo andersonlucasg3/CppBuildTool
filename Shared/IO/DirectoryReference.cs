@@ -29,6 +29,15 @@ public class DirectoryReference : TFileSystemReference<DirectoryReference>
         }
     }
 
+    public DirectoryReference? GetParent()
+    {
+        DirectoryInfo Info = new(PlatformPath);
+
+        if (Info.Parent is null) return null;
+
+        return Get(Info.Parent.FullName);
+    }
+
     public FileReference CombineFile(params string[] InPathComponents)
     {
         string FilePath = Path.Combine([PlatformPath, .. InPathComponents]);

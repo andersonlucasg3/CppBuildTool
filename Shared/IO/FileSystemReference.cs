@@ -75,7 +75,7 @@ public abstract class TFileSystemReference<T>
             }
 
             T NewReference = FactoryFunc!.Invoke(InPath);
-            
+
             AllReferences.Add(InPath, NewReference);
             return NewReference;
         }

@@ -34,7 +34,7 @@ public abstract class AModuleDefinition : ADefinition
 
     public PlatformSpecifics PlatformSpecifics { get; } = new();
 
-    protected abstract void Configure(AProjectDefinition InOwnerProject);
+    protected abstract void Configure();
 
     public IReadOnlySet<AModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
     {
@@ -184,18 +184,21 @@ public abstract class AModuleDefinition : ADefinition
         }
     }
 
-    internal void Configure(AProjectDefinition InOwnerProject, DirectoryReference InRootDirectory)
+    internal void SetOwnerProject(AProjectDefinition InOwnerProject)
+    {
+        _ownerProject = InOwnerProject;
+    }
+
+    internal void Configure(DirectoryReference InRootDirectory)
     {
         if (_bIsConfigured) return;
 
         _bIsConfigured = true;
 
-        _ownerProject = InOwnerProject;
-
         RootDirectory = InRootDirectory.Combine(Name);
         SourcesDirectory = RootDirectory.Combine(SourcesRoot);
 
-        Configure(InOwnerProject);
+        Configure();
     }
 }
 

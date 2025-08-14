@@ -23,7 +23,7 @@ public class AndroidSingleModuleDefiniton : AModuleDefinition
 
     public override string SourcesRoot => ".";
 
-    protected override void Configure(AProjectDefinition InOwnerProject)
+    protected override void Configure()
     {
                
     }
