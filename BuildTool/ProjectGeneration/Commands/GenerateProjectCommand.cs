@@ -27,7 +27,7 @@ public class GenCodeProject : IExecutableCommand
         string ConfigurationString = Arguments.GetArgumentValue<string>("Configuration", true) ?? "";
 
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
-        ProjectFinder.CompileProject(RootDirectory, ProjectName);
+        ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
         ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
         AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);

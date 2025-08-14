@@ -1,17 +1,16 @@
 ﻿using Shared.IO;
 using Shared.Misc;
+using Shared.Sources;
 using Shared.Projects;
 using Shared.Processes;
 using Shared.Platforms;
+using Shared.Extensions;
 using Shared.Compilation;
+using Shared.Projects.VisualStudio.Filters;
+using Shared.Projects.VisualStudio.Projecs;
+using Shared.Projects.VisualStudio.Solutions;
 
 namespace BuildTool.ProjectGeneration;
-
-using Shared.Extensions;
-using Shared.Sources;
-using VisualStudio.Filters;
-using VisualStudio.Projects;
-using VisualStudio.Solutions;
 
 public class VisualStudioProjectGenerator(AProjectDefinition InProjectDefinition, ATargetPlatform InTargetPlatform) : IProjectGenerator
 {

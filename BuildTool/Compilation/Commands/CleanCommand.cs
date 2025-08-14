@@ -30,7 +30,7 @@ public class Clean : IExecutableCommand
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
         
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
-        ProjectFinder.CompileProject(RootDirectory, ProjectName);
+        ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
         ProjectFinder.LoadProjects(RootDirectory, ProjectName);
 
         AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);

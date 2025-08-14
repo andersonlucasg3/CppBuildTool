@@ -5,6 +5,8 @@ namespace Shared.Projects;
 using IO;
 using Processes;
 using Exceptions;
+using Shared.Projects.VisualStudio.CharpProjects;
+using Shared.Misc;
 
 public static class ProjectFinder 
 {
@@ -14,11 +16,18 @@ public static class ProjectFinder
     private static readonly Dictionary<string, AProjectDefinition> _loadedProjectsByName = [];
     private static readonly Dictionary<Type, AProjectDefinition> _loadedProjectsByType = [];
 
-    public static void CompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
+    public static void CreateAndCompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
         DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpProjects");
 
-        FileReference InCSharpProjectFile = InProjectRootDirectory.CombineFile(InProjectName, $"{InProjectName}.csproj");
+        FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"{InProjectName}.csproj");
+
+        IndentedStringBuilder StringBuilder = new();
+
+        CSharpProject CSharpProject = new(InProjectRootDirectory);
+        CSharpProject.Build(StringBuilder);
+
+        InCSharpProjectFile.WriteAllText(StringBuilder.ToString());
 
         ProcessResult ProcessResult = ProcessExecutorExtension.Run([
             "dotnet",
