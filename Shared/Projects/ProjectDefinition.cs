@@ -57,7 +57,18 @@ public abstract class AProjectDefinition : ADefinition
         }
     }
 
-    protected void AddModule<TModule>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any) 
+    protected void AddProjectDependencyToGroup<TProject>(ETargetPlatformGroup InTargetPlatformGroup = ETargetPlatformGroup.Any)
+        where TProject : AProjectDefinition
+    {
+        ETargetPlatform[] Platforms = InTargetPlatformGroup.GetTargetPlatformsInGroup();
+
+        foreach (ETargetPlatform Platform in Platforms)
+        {
+            AddProjectDependency<TProject>(Platform);
+        }
+    }
+
+    protected void AddModule<TModule>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
         where TModule : AModuleDefinition, new()
     {
         TModule Module = new();
@@ -86,7 +97,15 @@ public abstract class AProjectDefinition : ADefinition
             _modulesPerPlatform.Add(InTargetPlatform, ModuleMap);
         }
 
+        if (ModuleMap.ContainsKey(InModule.Name)) return;
+
         ModuleMap.Add(InModule.Name, InModule);
+
+        IReadOnlySet<AModuleDefinition> Dependencies = InModule.GetDependencies(InTargetPlatform);
+        foreach (AModuleDefinition Dependency in Dependencies)
+        {
+            AddModuleInternal(InTargetPlatform, Dependency);
+        }
     }
 
     internal void Configure(DirectoryReference InRootDirectory)

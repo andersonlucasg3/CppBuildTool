@@ -99,6 +99,8 @@ public abstract class AModuleDefinition : ADefinition
             }
 
             ModuleSet.Add(DependencyModule);
+
+            AddDependencyRecursively(DependencyModule);
         }
     }
 
@@ -199,6 +201,25 @@ public abstract class AModuleDefinition : ADefinition
         SourcesDirectory = RootDirectory.Combine(SourcesRoot);
 
         Configure();
+    }
+
+    private void AddDependencyRecursively(AModuleDefinition InDependency)
+    {
+        foreach (KeyValuePair<ETargetPlatform, HashSet<AModuleDefinition>> Pair in InDependency._dependenciesPerPlatform)
+        {
+            if (!_dependenciesPerPlatform.TryGetValue(Pair.Key, out HashSet<AModuleDefinition>? ModuleSet))
+            {
+                ModuleSet = [];
+                _dependenciesPerPlatform.Add(Pair.Key, ModuleSet);
+            }
+
+            foreach (AModuleDefinition DependencyModule in Pair.Value)
+            {
+                ModuleSet.Add(DependencyModule);
+
+                AddDependencyRecursively(DependencyModule);
+            }
+        }
     }
 }
 
