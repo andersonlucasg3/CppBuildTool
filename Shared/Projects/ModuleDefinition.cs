@@ -1,9 +1,9 @@
 namespace Shared.Projects;
 
 using IO;
+using Platforms;
 using Exceptions;
 using Shared.Platforms;
-using Projects.Platforms;
 
 
 public abstract class AModuleDefinition : ADefinition

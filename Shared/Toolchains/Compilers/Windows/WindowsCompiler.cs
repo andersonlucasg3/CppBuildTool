@@ -30,20 +30,29 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
 
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
-        AModuleDefinition[] DepLibNames = [
-            .. InLinkCommandInfo.Module.GetDependencies(Platforms.ETargetPlatform.Any),
-            .. InLinkCommandInfo.Module.GetDependencies(InLinkCommandInfo.TargetPlatform)
-        ];
-
-        // TODO: make the linker command reference all dependency module generated libs
-
-        return [
+        List<string> CommandLine = [
             _linkPath,
             .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath.Quoted()),
             GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
             $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath.Quoted()}",
             .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}"),
         ];
+
+        if (InLinkCommandInfo.LibrarySearchPaths.Length > 0)
+        {
+            CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"/LIBPATH:{LibrarySearchPath.PlatformPath.Quoted()}"));
+        }
+
+        AModuleDefinition[] ModuleDependencies = [
+            .. InLinkCommandInfo.Module.GetDependencies(Platforms.ETargetPlatform.Any),
+            .. InLinkCommandInfo.Module.GetDependencies(InLinkCommandInfo.TargetPlatform)
+        ];
+        if (ModuleDependencies.Length > 0)
+        {
+            CommandLine.AddRange(ModuleDependencies.Select(Dependency => $"{Dependency.Name}.lib"));
+        }
+
+        return [.. CommandLine];
     }
 
     public override string GetObjectFileExtension()
