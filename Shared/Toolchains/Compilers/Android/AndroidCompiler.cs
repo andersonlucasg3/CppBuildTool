@@ -3,6 +3,7 @@ namespace Shared.Toolchains.Compilers.Android;
 using IO;
 using Projects;
 using Compilation;
+using Shared.Extensions;
 
 public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string InAArch, int InMinimumSupportedAndroidNdkVersion) : ACppCompiler
 {
@@ -15,21 +16,21 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
             GetClangBySourceExtension(InCompileCommandInfo.TargetFile.Extension),
             "-MMD",
             "-MF",
-            InCompileCommandInfo.DependencyFile.PlatformPath,
+            InCompileCommandInfo.DependencyFile.PlatformPath.Quoted(),
             "-c",
-            InCompileCommandInfo.TargetFile.PlatformPath,
+            InCompileCommandInfo.TargetFile.PlatformPath.Quoted(),
             "-o",
-            InCompileCommandInfo.ObjectFile.PlatformPath,
-            .. GetSystemIncludePaths().Select(Path => $"-I{Path.PlatformPath}"),
-            $"-I{InCompileCommandInfo.SourcesDirectory.PlatformPath}",
-            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory.PlatformPath}"),
+            InCompileCommandInfo.ObjectFile.PlatformPath.Quoted(),
+            .. GetSystemIncludePaths().Select(Path => $"-I{Path.PlatformPath.Quoted()}"),
+            $"-I{InCompileCommandInfo.SourcesDirectory.PlatformPath.Quoted()}",
+            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory.PlatformPath.Quoted()}"),
             "-fPIC",
             $"-std={CppStandard}",
             "-stdlib=libc++",
             "-Wall",
             "-Wextra",
-            "-target", $"{InAArch}-none-linux-android{InMinimumSupportedAndroidNdkVersion}",
-            $"--sysroot={InPrebuiltPlatformRoot.Combine("sysroot").PlatformPath}",
+            "-target", $"{InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
+            $"--sysroot={InPrebuiltPlatformRoot.Combine("sysroot").PlatformPath.Quoted()}",
             .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-D{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
         ];
@@ -38,13 +39,13 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
         return [
-            _clangPlusPlusCompiler.PlatformPath,
+            _clangPlusPlusCompiler.PlatformPath.Quoted(),
             GetClangBinaryTypeArgument(InLinkCommandInfo.Module.BinaryType),
-            string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath)),
+            string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath.Quoted())),
             "-o",
-            InLinkCommandInfo.LinkedFile.PlatformPath,
-            .. GetSystemLibrarySearchPaths().Select(Each => $"-L{Each.PlatformPath}"),
-            .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"),
+            InLinkCommandInfo.LinkedFile.PlatformPath.Quoted(),
+            .. GetSystemLibrarySearchPaths().Select(Each => $"-L{Each.PlatformPath.Quoted()}"),
+            .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath.PlatformPath.Quoted()}"),
             .. InLinkCommandInfo.Module.GetDependencies().Select(Dependency => $"-l{Dependency.Name}"),
             "-target", $"{InAArch}-none-linux-android{InMinimumSupportedAndroidNdkVersion}",
             "-llog", "-landroid",
