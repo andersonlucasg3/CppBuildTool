@@ -67,7 +67,7 @@ public static class CompilerDefinitionsProvider
 
             string GroupDefine = $"PLATFORM_GROUP_{TargetGroup.ToString().ToUpper()}";
 
-            ETargetPlatformGroup CurrentGroup = ATargetPlatform.GetPlatformGroup(InTargetPlatform);
+            ETargetPlatformGroup CurrentGroup = InTargetPlatform.GetPlatformGroup();
 
             int Value = CurrentGroup == TargetGroup ? 1 : 0;
 
@@ -91,7 +91,7 @@ public static class CompilerDefinitionsProvider
 
             string TypeDefine = $"PLATFORM_TYPE_{TargetType.ToString().ToUpper()}";
 
-            ETargetPlatformType CurrentType = ATargetPlatform.GetPlatformType(InTargetPlatform);
+            ETargetPlatformType CurrentType = InTargetPlatform.GetPlatformType();
 
             int Value = CurrentType == TargetType ? 1 : 0;
 

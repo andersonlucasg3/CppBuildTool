@@ -3,6 +3,7 @@ namespace Shared.Sources;
 using IO;
 using Projects;
 using Platforms;
+using Extensions;
 
 public interface ISourceCollection
 {
@@ -18,7 +19,7 @@ public interface ISourceCollection
 
     public static ISourceCollection CreateSourceCollection(ETargetPlatform InTargetPlatform, EModuleBinaryType InBinaryType)
     {
-        return ATargetPlatform.GetPlatformGroup(InTargetPlatform) switch
+        return InTargetPlatform.GetPlatformGroup() switch
         {
             ETargetPlatformGroup.Apple => InBinaryType switch
             {

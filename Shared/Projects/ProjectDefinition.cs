@@ -4,7 +4,7 @@ using IO;
 using Exceptions;
 using Shared.Platforms;
 using System.Reflection;
-
+using Shared.Extensions;
 
 public abstract class AProjectDefinition : ADefinition
 {
@@ -65,6 +65,17 @@ public abstract class AProjectDefinition : ADefinition
         Module.SetOwnerProject(this);
 
         AddModuleInternal(InTargetPlatform, Module);
+    }
+
+    protected void AddModuleToGroup<TModule>(ETargetPlatformGroup InTargetPlatformGroup = ETargetPlatformGroup.Any)
+        where TModule : AModuleDefinition, new()
+    {
+        ETargetPlatform[] Platforms = InTargetPlatformGroup.GetTargetPlatformsInGroup();
+
+        foreach (ETargetPlatform Platform in Platforms)
+        {
+            AddModule<TModule>(Platform);
+        }
     }
 
     private void AddModuleInternal(ETargetPlatform InTargetPlatform, AModuleDefinition InModule)
