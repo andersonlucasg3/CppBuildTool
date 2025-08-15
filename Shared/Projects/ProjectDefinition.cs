@@ -1,17 +1,25 @@
+using Shared.Platforms;
+
 namespace Shared.Projects;
 
 using IO;
 using Exceptions;
-using Shared.Platforms;
-using System.Reflection;
-using Shared.Extensions;
+using Extensions;
 
 public abstract class AProjectDefinition : ADefinition
 {
     private bool _bIsConfigured = false;
 
+    private DirectoryReference? _rootDirectory = null;
+    private DirectoryReference? _modulesDirectory = null;
+
     private readonly Dictionary<ETargetPlatform, HashSet<AProjectDefinition>> _dependencyProjectsPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, Dictionary<string, AModuleDefinition>> _modulesPerPlatform = [];
+
+    protected virtual string ModulesDirectoryName { get; } = "Modules";
+
+    public DirectoryReference RootDirectory => _rootDirectory!;
+    public DirectoryReference ModulesDirectory => _modulesDirectory!;
 
     public IReadOnlyDictionary<string, AModuleDefinition> GetModules(ETargetPlatform InTargetPlatform)
     {
@@ -114,8 +122,8 @@ public abstract class AProjectDefinition : ADefinition
 
         _bIsConfigured = true;
 
-        RootDirectory = InRootDirectory.Combine(Name);
-        SourcesDirectory = RootDirectory.Combine(SourcesRoot);
+        _rootDirectory = InRootDirectory;
+        _modulesDirectory = InRootDirectory.Combine(ModulesDirectoryName);
 
         Configure();
 
@@ -125,7 +133,7 @@ public abstract class AProjectDefinition : ADefinition
             {
                 if (Module.OwnerProject != this) continue;
 
-                Module.Configure(SourcesDirectory);
+                Module.Configure(ModulesDirectory.Combine(Module.Name));
             }
         }
     }

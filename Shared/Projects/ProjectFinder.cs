@@ -82,7 +82,7 @@ public static class ProjectFinder
                     throw new FailedToCreateProjectInstanceException($"Project type already created: {ProjectType.Name}");
                 }
 
-                Project.Configure(ProjectsNameSourcesMap[Project.GetType().Name].Directory.GetParent()!);
+                Project.Configure(ProjectsNameSourcesMap[Project.GetType().Name].Directory);
             }
         }
     }

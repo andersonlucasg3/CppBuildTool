@@ -10,6 +10,8 @@ public abstract class AModuleDefinition : ADefinition
 {
     private bool _bIsConfigured = false;
     private AProjectDefinition? _ownerProject = null;
+    private DirectoryReference? _rootDirectory = null;
+    private DirectoryReference? _sourcesDirectory = null;
 
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _headerSearchPathPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<AModuleDefinition>> _dependenciesPerPlatform = [];
@@ -19,6 +21,8 @@ public abstract class AModuleDefinition : ADefinition
     private readonly List<string> _librarySearchPaths = [];
 
     private readonly List<DirectoryReference> _copyResourcesDirectories = [];
+
+    protected virtual string SourcesDirectoryName { get; } = "Sources";
 
     // can be overriden to change the output file name
     // for example in a library or application module with name X
@@ -33,6 +37,9 @@ public abstract class AModuleDefinition : ADefinition
     public IReadOnlyList<DirectoryReference> CopyResourcesDirectories => _copyResourcesDirectories;
 
     public PlatformSpecifics PlatformSpecifics { get; } = new();
+
+    public DirectoryReference RootDirectory => _rootDirectory!;
+    public DirectoryReference SourcesDirectory => _sourcesDirectory!;
 
     protected abstract void Configure();
 
@@ -119,7 +126,8 @@ public abstract class AModuleDefinition : ADefinition
 
         foreach (string HeaderSearchPath in InHeaderSearchPaths)
         {
-            DirectoryReference SearchPath = OwnerProject.SourcesDirectory.Combine(HeaderSearchPath);
+            // TODO: check this
+            DirectoryReference SearchPath = OwnerProject.ModulesDirectory.Combine(HeaderSearchPath);
             SearchPathsSet.Add(SearchPath.PlatformRelativePath);
         }
     }
@@ -173,7 +181,7 @@ public abstract class AModuleDefinition : ADefinition
     {
         foreach (string CopyResourcesFolder in InCopyResourcesFolders)
         {
-            DirectoryReference ResourcesDirectory = RootDirectory.Combine(CopyResourcesFolder);
+            DirectoryReference ResourcesDirectory = SourcesDirectory.Combine(CopyResourcesFolder);
 
             if (!ResourcesDirectory.bExists)
             {
@@ -197,8 +205,8 @@ public abstract class AModuleDefinition : ADefinition
 
         _bIsConfigured = true;
 
-        RootDirectory = InRootDirectory.Combine(Name);
-        SourcesDirectory = RootDirectory.Combine(SourcesRoot);
+        _rootDirectory = InRootDirectory;
+        _sourcesDirectory = InRootDirectory.Combine(SourcesDirectoryName);
 
         Configure();
     }

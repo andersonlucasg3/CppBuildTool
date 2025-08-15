@@ -21,7 +21,7 @@ public class AndroidSingleModuleDefiniton : AModuleDefinition
 
     public override string Name => "AndroidNative";
 
-    public override string SourcesRoot => ".";
+    protected override string SourcesDirectoryName => ".";
 
     protected override void Configure()
     {
