@@ -121,7 +121,7 @@ public class Compile : IExecutableCommand
 
             bSuccess &= Info.Result is ECompilationResult.CompilationSuccess or ECompilationResult.NothingToCompile;
 
-            LinkModuleTask LinkTask = new(_threadSafeLock, ModuleInfo, TargetPlatform);
+            LinkModuleTask LinkTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration);
             LinkTask.Link(ModuleCompilationResultMap, bPrintLinkCommands);
         });
 

@@ -27,6 +27,7 @@ public struct LinkCommandInfo
     public required FileReference[] ObjectFiles;
     public required DirectoryReference[] LibrarySearchPaths;
     public required ETargetPlatform TargetPlatform;
+    public required ECompileConfiguration Configuration;
     public required string[] LinkWithLibraries;
 }
 

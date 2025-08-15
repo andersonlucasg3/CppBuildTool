@@ -1,5 +1,6 @@
 using Shared.Compilation;
 using Shared.Extensions;
+using Shared.IO;
 using Shared.Projects;
 
 namespace Shared.Toolchains.Compilers.Windows;
@@ -24,7 +25,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
             "/EHsc",
             "/GR",
             .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"/D{Define}"),
-            .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
+            .. GetCompilerOptimizationArguments(InCompileCommandInfo.Configuration),
         ];
     }
 
@@ -36,6 +37,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
             GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
             $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath.Quoted()}",
             .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}"),
+            .. GetLinkerOptimizationArguments(InLinkCommandInfo.Configuration, InLinkCommandInfo.LinkedFile),
         ];
 
         if (InLinkCommandInfo.LibrarySearchPaths.Length > 0)
@@ -60,13 +62,23 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
         return ".obj";
     }
 
-    private static string[] GetOptimizationArguments(ECompileConfiguration InConfiguration)
+    private static string[] GetCompilerOptimizationArguments(ECompileConfiguration InConfiguration)
     {
         return InConfiguration switch
         {
             ECompileConfiguration.Debug => ["/DDEBUG", "/Zi"],
             ECompileConfiguration.Release => ["/flto", "/O3", "/DNDEBUG"],
             _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null)
+        };
+    }
+
+    private static string[] GetLinkerOptimizationArguments(ECompileConfiguration InConfiguration, FileReference InLinkedFile)
+    {
+        return InConfiguration switch
+        {
+            ECompileConfiguration.Debug => ["/DEBUG", $"/PDB:{InLinkedFile.ChangeExtension("pdb").PlatformPath.Quoted()}"],
+            ECompileConfiguration.Release => [], // maybe in the future?
+            _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null),
         };
     }
 

@@ -1,3 +1,4 @@
+using Shared.Compilation;
 using Shared.IO;
 using Shared.Platforms;
 using Shared.Processes;
@@ -6,7 +7,7 @@ using Shared.Toolchains;
 
 namespace BuildTool.Compilation;
 
-public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform)
+public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;
 
@@ -74,7 +75,8 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, A
             LibrarySearchPaths = LibrarySearchPaths,
             ObjectFiles = ObjectFiles,
             TargetPlatform = InTargetPlatform.Platform,
-            LinkWithLibraries = LinkWithLibraries
+            Configuration = InConfiguration,
+            LinkWithLibraries = LinkWithLibraries,
         };
         
         lock (InThreadSafeLock)
