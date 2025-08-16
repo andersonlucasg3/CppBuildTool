@@ -106,7 +106,7 @@ public class Compile : IExecutableCommand
 
         CompileModuleInfo[] CompileModuleInfos = [.. SelectedModules.Select(Module => ModuleCompilationResultMap[Module])];
 
-        ChecksumStorage.Shared.LoadChecksums();
+        ChecksumStorage.Shared.LoadChecksums(TargetPlatform.Platform, CompileConfiguration);
 
         bool bSuccess = true;
         Parallelization.ForEach(CompileModuleInfos, ModuleInfo =>
@@ -125,7 +125,7 @@ public class Compile : IExecutableCommand
             LinkTask.Link(ModuleCompilationResultMap, bPrintLinkCommands);
         });
 
-        ChecksumStorage.Shared.SaveChecksums();
+        ChecksumStorage.Shared.SaveChecksums(TargetPlatform.Platform, CompileConfiguration);
 
         if (bSuccess)
         {

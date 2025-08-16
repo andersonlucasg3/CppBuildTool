@@ -14,8 +14,6 @@ public class CleanTask(AProjectDefinition InProjectDefinition, AModuleDefinition
     {
         Parallelization.ForEach(InModules, Module =>
         {
-            _compileDirectories.CreateIntermediateChecksumsDirectory().Delete(true);
-
             DirectoryReference BinaryConfigurationDirectory = _compileDirectories.CreateBaseConfigurationDirectory(ECompileBaseDirectory.Binaries, false);
 
             if (BinaryConfigurationDirectory.bExists)

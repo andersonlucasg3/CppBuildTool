@@ -4,6 +4,8 @@ namespace Shared.Projects;
 
 using IO;
 using Compilation;
+using Shared.Extensions;
+
 
 public enum ECompileBaseDirectory
 {
@@ -38,16 +40,6 @@ public class ProjectDirectories
         if (bCreate && !ProjectsDirectory.bExists) ProjectsDirectory.Create();
 
         return ProjectsDirectory;
-    }
-
-    public DirectoryReference CreateIntermediateCSharpProjectDirectory(bool bCreate = true)
-    {
-        DirectoryReference IntermediateDirectory = CreateBaseDirectory(ECompileBaseDirectory.Intermediate, bCreate);
-
-        DirectoryReference CSharpProjectsDirectory = IntermediateDirectory.Combine("CSharpProjects");
-        if (bCreate && !CSharpProjectsDirectory.bExists) CSharpProjectsDirectory.Create();
-
-        return CSharpProjectsDirectory;
     }
 
     public DirectoryReference CreateBaseConfigurationDirectory(ECompileBaseDirectory InBaseDirectory, bool bCreate = true)
@@ -98,11 +90,11 @@ public class ProjectDirectories
         return CreateModuleSubDirectory(ECompileBaseDirectory.Intermediate, ModuleName, "Objects", bCreate);
     }
 
-    public DirectoryReference CreateIntermediateChecksumsDirectory(bool bCreate = true)
+    public DirectoryReference CreateIntermediateChecksumsDirectory(ETargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, bool bCreate = true)
     {
         DirectoryReference IntermediateDirectory = CreateBaseDirectory(ECompileBaseDirectory.Intermediate, bCreate);
 
-        DirectoryReference ChecksumsDirectory = IntermediateDirectory.Combine("Checksums");
+        DirectoryReference ChecksumsDirectory = IntermediateDirectory.Combine("Checksums", InTargetPlatform.ToSourcePlatformName(), InConfiguration.ToString());
         if (!ChecksumsDirectory.bExists) ChecksumsDirectory.Create();
 
         return ChecksumsDirectory;

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Shared.IO;
+using Shared.Platforms;
 using Shared.Projects;
 
 namespace Shared.Compilation;
@@ -9,8 +10,9 @@ public class ChecksumStorage
 {
     public static readonly ChecksumStorage Shared = new();
 
+    private readonly JsonSerializerOptions _sharedOptions = new() { WriteIndented = true };
+    private readonly Dictionary<string, string> _computedChecksumsMap = [];
     private Dictionary<string, string> _savedChecksumsMap = [];
-    private Dictionary<string, string> _computedChecksumsMap = [];
     private readonly Lock _lock = new();
 
     public bool ShouldRecompile(CompileAction InAction)
@@ -107,33 +109,27 @@ public class ChecksumStorage
         }
     }
 
-    public void LoadChecksums()
+    public void LoadChecksums(ETargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
     {
-        DirectoryReference ChecksumsDirectory = ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory();
+        DirectoryReference ChecksumsDirectory = ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory(InTargetPlatform, InConfiguration);
 
         FileReference ChecksumsFile = ChecksumsDirectory.CombineFile("Cached.checksums");
 
         if (ChecksumsFile.bExists)
         {
-            ChecksumsFile.OpenRead(InFileStream =>
-            {
-                _savedChecksumsMap = JsonSerializer.Deserialize<Dictionary<string, string>>(InFileStream) ?? [];
-            });
+            ChecksumsFile.OpenRead(InFileStream => _savedChecksumsMap = JsonSerializer.Deserialize<Dictionary<string, string>>(InFileStream) ?? []);
         }
     }
     
-    public void SaveChecksums()
+    public void SaveChecksums(ETargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
     {
-        DirectoryReference ChecksumsDirectory = ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory();
+        DirectoryReference ChecksumsDirectory = ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory(InTargetPlatform, InConfiguration);
 
         FileReference ChecksumsFile = ChecksumsDirectory.CombineFile("Cached.checksums");
 
         if (ChecksumsFile.bExists) ChecksumsFile.Delete();
         
-        ChecksumsFile.OpenWrite(InFileStream =>
-        {
-            JsonSerializer.Serialize(InFileStream, _savedChecksumsMap, new JsonSerializerOptions { WriteIndented = true });
-        });
+        ChecksumsFile.OpenWrite(InFileStream => JsonSerializer.Serialize(InFileStream, _savedChecksumsMap, _sharedOptions));
     }
     
     public static string GenerateChecksum(FileReference InFile)

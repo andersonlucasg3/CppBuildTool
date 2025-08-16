@@ -19,7 +19,7 @@ public static class ProjectFinder
     public static void CreateAndCompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
         DirectoryReference IntermediateBinariesDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpBinaries");
-        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpProjects");
+        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "Projects");
 
         if (!IntermediateBinariesDirectory.bExists) IntermediateBinariesDirectory.Create();
         if (!IntermediateProjectsDirectory.bExists) IntermediateProjectsDirectory.Create();
