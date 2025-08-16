@@ -61,7 +61,7 @@ public class AndroidToolchain : AClangToolchain
     {
         return BinaryType switch
         {
-            EModuleBinaryType.Application => ".so", // Android only supports shared libraries as targets
+            EModuleBinaryType.Application => "", // Android only supports shared libraries as targets
             EModuleBinaryType.StaticLibrary => ".a",
             EModuleBinaryType.DynamicLibrary => ".so",
             _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
@@ -72,7 +72,7 @@ public class AndroidToolchain : AClangToolchain
     {
         return InBinaryType switch
         {
-            EModuleBinaryType.Application => "lib",
+            EModuleBinaryType.Application => "",
             EModuleBinaryType.StaticLibrary => "lib",
             EModuleBinaryType.DynamicLibrary => "lib",
             EModuleBinaryType.ShaderLibrary => throw new ShaderLibraryNotSupportedOnPlatformException(InBinaryType),

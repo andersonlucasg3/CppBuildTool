@@ -62,6 +62,8 @@ public class Clean : IExecutableCommand
         
         Console.WriteLine($"Cleaning Intermediate for platform {TargetPlatform.Name}");
 
+        ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory(TargetPlatform.Platform, CompileConfiguration).Delete(true);
+
         CleanTask CleanTask = new(Project, SelectedModules, TargetPlatform.Toolchain);
         CleanTask.Clean();
 

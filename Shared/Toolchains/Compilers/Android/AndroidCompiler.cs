@@ -29,7 +29,7 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
             "-stdlib=libc++",
             "-Wall",
             "-Wextra",
-            "-target", $"{InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
+            $"--target={InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
             $"--sysroot={InPrebuiltPlatformRoot.Combine("sysroot").PlatformPath.Quoted()}",
             .. InCompileCommandInfo.CompilerDefinitions.Select(Define => $"-D{Define}"),
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
@@ -40,15 +40,15 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
     {
         return [
             _clangPlusPlusCompiler.PlatformPath,
-            GetClangBinaryTypeArgument(InLinkCommandInfo.Module.BinaryType),
+            .. GetBinaryTypeArguments(InLinkCommandInfo.Module.BinaryType),
             string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath.Quoted())),
             "-o",
             InLinkCommandInfo.LinkedFile.PlatformPath.Quoted(),
             .. GetSystemLibrarySearchPaths().Select(Each => $"-L{Each.PlatformPath.Quoted()}"),
             .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath.PlatformPath.Quoted()}"),
             .. InLinkCommandInfo.Module.GetDependencies().Select(Dependency => $"-l{Dependency.Name}"),
-            "-target", $"{InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
-            "-llog", "-landroid",
+            $"--target={InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
+            "-llog", "-landroid", "-lc++", "-lc",
         ];
     }
 
@@ -72,6 +72,7 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
         DirectoryReference SysrootLibraries = InPrebuiltPlatformRoot.Combine("sysroot", "usr", "lib", $"{InAArch}-linux-android");
         return [
             SysrootLibraries,
+            SysrootLibraries.Combine($"{InMinimumSupportedAndroidNdkVersion}"),
         ];
     }
 
@@ -93,13 +94,13 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
         throw new SourceFileExtensionNotSupportedException(FileExtension);
     }
 
-    private static string GetClangBinaryTypeArgument(EModuleBinaryType BinaryType)
+    private static string[] GetBinaryTypeArguments(EModuleBinaryType BinaryType)
     {
         return BinaryType switch
         {
-            EModuleBinaryType.Application => "",
-            EModuleBinaryType.StaticLibrary => "-static",
-            EModuleBinaryType.DynamicLibrary => "-shared",
+            EModuleBinaryType.Application => [ "-fPIE", "-pie", ],
+            EModuleBinaryType.StaticLibrary => [ "-static", "-fPIC" ],
+            EModuleBinaryType.DynamicLibrary => [ "-shared", "-fPIC" ],
             _ => throw new ArgumentOutOfRangeException(nameof(BinaryType), BinaryType, null)
         };
     }
