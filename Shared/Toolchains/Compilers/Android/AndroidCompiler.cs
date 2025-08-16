@@ -39,7 +39,7 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
     public override string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo)
     {
         return [
-            _clangPlusPlusCompiler.PlatformPath.Quoted(),
+            _clangPlusPlusCompiler.PlatformPath,
             GetClangBinaryTypeArgument(InLinkCommandInfo.Module.BinaryType),
             string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath.Quoted())),
             "-o",
@@ -47,7 +47,7 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
             .. GetSystemLibrarySearchPaths().Select(Each => $"-L{Each.PlatformPath.Quoted()}"),
             .. InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath.PlatformPath.Quoted()}"),
             .. InLinkCommandInfo.Module.GetDependencies().Select(Dependency => $"-l{Dependency.Name}"),
-            "-target", $"{InAArch}-none-linux-android{InMinimumSupportedAndroidNdkVersion}",
+            "-target", $"{InAArch}-linux-android{InMinimumSupportedAndroidNdkVersion}",
             "-llog", "-landroid",
         ];
     }

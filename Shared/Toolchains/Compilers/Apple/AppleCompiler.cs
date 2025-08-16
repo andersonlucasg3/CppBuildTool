@@ -64,8 +64,11 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"));
         }
 
-        IReadOnlySet<AModuleDefinition> ModuleDependencies = InLinkCommandInfo.Module.GetDependencies();
-        if (ModuleDependencies.Count > 0)
+        AModuleDefinition[] ModuleDependencies = [
+            .. InLinkCommandInfo.Module.GetDependencies(Platforms.ETargetPlatform.Any),
+            .. InLinkCommandInfo.Module.GetDependencies(InLinkCommandInfo.TargetPlatform)
+        ];
+        if (ModuleDependencies.Length > 0)
         {
             CommandLine.AddRange(ModuleDependencies.Select(Dependency => $"-l{Dependency.Name}"));
         }
