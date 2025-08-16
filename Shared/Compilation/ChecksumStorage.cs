@@ -1,44 +1,70 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Shared.IO;
 using Shared.Platforms;
 using Shared.Projects;
+using Shared.Toolchains;
 
 namespace Shared.Compilation;
+
+public class ChecksumData
+{
+    [JsonInclude]
+    public string? FileChecksum = null;
+
+    [JsonInclude]
+    public string? CommandLineChecksum = null;
+
+    [JsonInclude]
+    public bool bCompileSucceeded = false;
+
+    [JsonInclude]
+    public Dictionary<string, string> DependencyHeadersChecksumMap = [];
+
+    public bool ChecksumsMatch(string InFileChecksum, string InCommandLineChecksum)
+    {
+        return FileChecksum == InFileChecksum && CommandLineChecksum == InCommandLineChecksum;
+    }
+}
 
 public class ChecksumStorage
 {
     public static readonly ChecksumStorage Shared = new();
 
-    private readonly JsonSerializerOptions _sharedOptions = new() { WriteIndented = true };
-    private readonly Dictionary<string, string> _computedChecksumsMap = [];
-    private Dictionary<string, string> _savedChecksumsMap = [];
     private readonly Lock _lock = new();
+    private readonly SHA256 _sha = SHA256.Create();
+    private readonly JsonSerializerOptions _sharedOptions = new() { WriteIndented = true };
 
-    public bool ShouldRecompile(CompileAction InAction)
+    private Dictionary<string, ChecksumData> _checksumDataMap = [];
+
+    // used to avoid generating header file checksums when already generated 
+    private Dictionary<string, string> _memoryFileChecksumMap = [];
+
+    ~ChecksumStorage()
+    {
+        _sha.Dispose();
+    }
+
+    public bool ShouldRecompile(CompileAction InAction, IToolchain InToolchain)
     {
         lock (_lock)
         {
             // if the checksum is not on the map, we need to compile it
-            if (!_savedChecksumsMap.TryGetValue(InAction.SourceFile.RelativePath, out string? SavedChecksum))
+            if (!_checksumDataMap.TryGetValue(InAction.SourceFile.RelativePath, out ChecksumData? ChecksumData))
             {
                 return true;
             }
 
-            if (!_computedChecksumsMap.TryGetValue(InAction.SourceFile.RelativePath, out string? ComputedChecksum))
-            {
-                // if the checksum is not on the map, we need to generate it
-                ComputedChecksum = GenerateChecksum(InAction.SourceFile);
+            GenerateChecksums(InAction, InToolchain, out string FileChecksum, out string CommandLineChecksum);
 
-                _computedChecksumsMap.Add(InAction.SourceFile.RelativePath, ComputedChecksum);
-            }
-
-            // If the source file changed, we don't need to look to the dependencies
-            if (ComputedChecksum != SavedChecksum)
+            // If the source file or the command-line changed, we don't need to look to the dependencies
+            if (!ChecksumData.ChecksumsMatch(FileChecksum, CommandLineChecksum))
             {
                 return true;
             }
-            
+
             // then, we check all dependency headers for changes
             bool bShouldRecompile = false;
             // need the nullable here due to shader libraries not having dependency files
@@ -46,52 +72,54 @@ public class ChecksumStorage
             {
                 if (!HeaderFile.bExists)
                 {
-                    _savedChecksumsMap.Remove(HeaderFile.RelativePath);
-                    _computedChecksumsMap.Remove(HeaderFile.RelativePath);
+                    ChecksumData.DependencyHeadersChecksumMap.Remove(HeaderFile.RelativePath);
+
                     continue;
                 }
 
-                ComputedChecksum = GenerateChecksum(HeaderFile);
+                string CurrentHeaderChecksum = GenerateFileChecksum(HeaderFile);
 
-                if (!_savedChecksumsMap.TryGetValue(HeaderFile.RelativePath, out SavedChecksum) || SavedChecksum != ComputedChecksum)
+                bool bDontHaveHeaderChecksumData = !ChecksumData.DependencyHeadersChecksumMap.TryGetValue(HeaderFile.RelativePath, out string? HeaderChecksum);
+                bool bChecksumMismatch = HeaderChecksum != CurrentHeaderChecksum;
+
+                if (!bShouldRecompile)
                 {
-                    bShouldRecompile = true;
+                    bShouldRecompile = bDontHaveHeaderChecksumData || bChecksumMismatch;
                 }
-                
-                _computedChecksumsMap[HeaderFile.RelativePath] = ComputedChecksum;
+
+                ChecksumData.DependencyHeadersChecksumMap[HeaderFile.RelativePath] = CurrentHeaderChecksum;
             }
             return bShouldRecompile;
         }
     }
 
-    public void CompilationSuccess(CompileAction InAction)
+    public void CompilationSuccess(CompileAction InAction, IToolchain InToolchain)
     {
         lock (_lock)
         {
             string RelativePath = InAction.SourceFile.RelativePath;
 
-            if (!_computedChecksumsMap.TryGetValue(RelativePath, out string? ComputedChecksum))
+            if (!_checksumDataMap.TryGetValue(RelativePath, out ChecksumData? ChecksumData))
             {
-                ComputedChecksum = GenerateChecksum(InAction.SourceFile);
-                _computedChecksumsMap.Add(RelativePath, ComputedChecksum);
+                _checksumDataMap.Add(RelativePath, ChecksumData = new());
+
+                GenerateChecksums(InAction, InToolchain, out ChecksumData.FileChecksum, out ChecksumData.CommandLineChecksum);
             }
-            _savedChecksumsMap[RelativePath] = ComputedChecksum;
+
+            ChecksumData.bCompileSucceeded = true;
 
             foreach (FileReference HeaderFile in InAction.Dependency?.DependencyHeaderFiles ?? [])
             {
                 if (!HeaderFile.bExists)
                 {
-                    _savedChecksumsMap.Remove(HeaderFile.RelativePath);
-                    _computedChecksumsMap.Remove(HeaderFile.RelativePath);
+                    ChecksumData.DependencyHeadersChecksumMap.Remove(HeaderFile.RelativePath);
+
                     continue;
                 }
 
-                if (!_computedChecksumsMap.TryGetValue(HeaderFile.RelativePath, out ComputedChecksum))
-                    {
-                        ComputedChecksum = GenerateChecksum(HeaderFile);
-                        _computedChecksumsMap.Add(HeaderFile.RelativePath, ComputedChecksum);
-                    }
-                _savedChecksumsMap[HeaderFile.RelativePath] = ComputedChecksum;
+                string CurrentHeaderChecksum = GenerateFileChecksum(HeaderFile);
+
+                ChecksumData.DependencyHeadersChecksumMap[HeaderFile.RelativePath] = CurrentHeaderChecksum;
             }
         }
     }
@@ -100,12 +128,14 @@ public class ChecksumStorage
     {
         lock (_lock)
         {
-            _savedChecksumsMap.Remove(InAction.SourceFile.RelativePath);
-
-            foreach (FileReference HeaderFile in InAction.Dependency?.DependencyHeaderFiles ?? [])
+            if (!_checksumDataMap.TryGetValue(InAction.SourceFile.RelativePath, out ChecksumData? ChecksumData))
             {
-                _savedChecksumsMap.Remove(HeaderFile.RelativePath);
+                _checksumDataMap.Add(InAction.SourceFile.RelativePath, new());
+
+                return;
             }
+
+            ChecksumData.bCompileSucceeded = false;
         }
     }
 
@@ -117,10 +147,10 @@ public class ChecksumStorage
 
         if (ChecksumsFile.bExists)
         {
-            ChecksumsFile.OpenRead(InFileStream => _savedChecksumsMap = JsonSerializer.Deserialize<Dictionary<string, string>>(InFileStream) ?? []);
+            ChecksumsFile.OpenRead(InFileStream => _checksumDataMap = JsonSerializer.Deserialize<Dictionary<string, ChecksumData>>(InFileStream) ?? []);
         }
     }
-    
+
     public void SaveChecksums(ETargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
     {
         DirectoryReference ChecksumsDirectory = ProjectDirectories.Shared.CreateIntermediateChecksumsDirectory(InTargetPlatform, InConfiguration);
@@ -128,24 +158,33 @@ public class ChecksumStorage
         FileReference ChecksumsFile = ChecksumsDirectory.CombineFile("Cached.checksums");
 
         if (ChecksumsFile.bExists) ChecksumsFile.Delete();
-        
-        ChecksumsFile.OpenWrite(InFileStream => JsonSerializer.Serialize(InFileStream, _savedChecksumsMap, _sharedOptions));
+
+        ChecksumsFile.OpenWrite(InFileStream => JsonSerializer.Serialize(InFileStream, _checksumDataMap, _sharedOptions));
     }
-    
-    public static string GenerateChecksum(FileReference InFile)
+
+    private void GenerateChecksums(CompileAction InAction, IToolchain InToolchain, out string OutFileChecksum, out string OutCommandLineChecksum)
     {
-        using SHA256 SHA = SHA256.Create();
-        
+        OutFileChecksum = GenerateFileChecksum(InAction.SourceFile);
+        OutCommandLineChecksum = GenerateStringChecksum(string.Join(' ', InToolchain.GetCompileCommandline(InAction.CompileCommandInfo)));
+    }
+
+    private string GenerateFileChecksum(FileReference InFile)
+    {
+        if (_memoryFileChecksumMap.TryGetValue(InFile.RelativePath, out string? CachedChecksum))
+        {
+            return CachedChecksum;
+        }
+
         bool bGotIt = false;
 
-        string Result = "";
+        string Checksum = "";
         do
         {
             try
             {
                 InFile.OpenRead(FileStream =>
                 {
-                    Result = Convert.ToHexString(SHA.ComputeHash(FileStream));
+                    Checksum = Convert.ToHexString(_sha.ComputeHash(FileStream));
                     bGotIt = true;
                 });
             }
@@ -153,9 +192,34 @@ public class ChecksumStorage
             {
                 Thread.Sleep(1);
             }
-        } 
+        }
         while (!bGotIt);
-        
+
+        _memoryFileChecksumMap.Add(InFile.RelativePath, Checksum);
+
+        return Checksum;
+    }
+
+    private string GenerateStringChecksum(string InString)
+    {
+        bool bGotIt = false;
+
+        string Result = "";
+        do
+        {
+            try
+            {
+                byte[] StringBytes = Encoding.UTF8.GetBytes(InString);
+                Result = Convert.ToHexString(_sha.ComputeHash(StringBytes));
+                bGotIt = true;
+            }
+            catch
+            {
+                Thread.Sleep(1);
+            }
+        }
+        while (!bGotIt);
+
         return Result;
     }
 }

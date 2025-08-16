@@ -2,6 +2,8 @@ namespace Shared.Compilation;
 
 using IO;
 using Projects;
+using Shared.Platforms;
+using Shared.Toolchains.Compilers;
 using Sources;
 using Toolchains;
 
@@ -15,10 +17,12 @@ public class CompileAction
     public readonly FileReference SourceFile;
     public readonly FileReference DependencyFile;
     public readonly FileReference ObjectFile;
+    
+    public readonly CompileCommandInfo CompileCommandInfo;
 
-    public CompileDependency Dependency 
+    public CompileDependency Dependency
     {
-        get 
+        get
         {
             DependencyFile.UpdateExistance();
             if (_dependency is null && DependencyFile.bExists)
@@ -27,24 +31,42 @@ public class CompileAction
             }
 
             return _dependency!;
-        }    
+        }
     }
 
-    public readonly bool bShouldCompile;
-
     public string KeyName => SourceFile.RelativePath;
-    
-    public CompileAction(FileReference InSourceFile, DirectoryReference InObjectsDirectory, IToolchain InToolchain, ISourceCollection InSourceCollection)
+
+    public CompileAction(AModuleDefinition InModule, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, FileReference InSourceFile, DirectoryReference InObjectsDirectory, ISourceCollection InSourceCollection)
     {
         _sourceCollection = InSourceCollection;
 
         SourceFile = InSourceFile;
 
-        _objectFileExtension = InToolchain.GetObjectFileExtension(InSourceFile);
+        _objectFileExtension = InTargetPlatform.Toolchain.GetObjectFileExtension(InSourceFile);
         ObjectFile = InObjectsDirectory.CombineFile($"{SourceFile.Name}{_objectFileExtension}");
         DependencyFile = $"{ObjectFile.FullPath}.d";
 
-        bShouldCompile = ChecksumStorage.Shared.ShouldRecompile(this);
+        DirectoryReference[] HeaderSearchPaths = [
+            .. InModule.GetHeaderSearchPaths(ETargetPlatform.Any),
+            .. InModule.GetHeaderSearchPaths(InTargetPlatform.Platform),
+            .. InModule.GetDependencies(ETargetPlatform.Any).Select(DependencyModule => DependencyModule.SourcesDirectory),
+            .. InModule.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory),
+        ];
+
+        string[] CompilerDefinitions = CompilerDefinitionsProvider.GetAutomaticCompilerDefinitions(InTargetPlatform, InConfiguration, InModule);
+        
+        CompileCommandInfo = new()
+        {
+            Module = InModule,
+            SourcesDirectory = InModule.SourcesDirectory,
+            TargetFile = SourceFile,
+            DependencyFile = DependencyFile,
+            ObjectFile = ObjectFile,
+            HeaderSearchPaths = HeaderSearchPaths,
+            Configuration = InConfiguration,
+            TargetPlatform = InTargetPlatform.Platform,
+            CompilerDefinitions = CompilerDefinitions
+        };
     }
 }
 

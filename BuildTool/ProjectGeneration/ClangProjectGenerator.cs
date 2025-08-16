@@ -45,7 +45,7 @@ public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatfor
             
             Parallelization.ForEach(SourceCollection.SourceFiles, SourceFile =>
             {
-                CompileAction Action = new(SourceFile, ObjectsDirectory, InTargetPlatform.Toolchain, SourceCollection);
+                CompileAction Action = new(Module, InTargetPlatform, InConfiguration, SourceFile, ObjectsDirectory, SourceCollection);
 
                 DirectoryReference[] HeaderSearchPaths = [
                     .. Module.GetHeaderSearchPaths(ETargetPlatform.Any),

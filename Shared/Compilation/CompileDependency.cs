@@ -81,7 +81,7 @@ public partial class CompileDependency
         InFile.WriteAllText(Contents);
     }
 
-    [GeneratedRegex("[/a-zA-Z0-9-_\\s\\(\\).]+[^:\\s\\\\]", RegexOptions.Multiline)]
+    [GeneratedRegex("[A-Z:/a-zA-Z0-9-_\\\\s\\\\(\\\\).]+[^:][^:\\s\\\\]", RegexOptions.Multiline)]
     private static partial Regex GetDependencyFileRegex();
 }
 

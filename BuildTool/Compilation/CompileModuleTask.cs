@@ -5,7 +5,6 @@ using Shared.Processes;
 using Shared.Projects;
 using Shared.Sources;
 using Shared.Toolchains;
-using Shared.Toolchains.Compilers;
 
 namespace BuildTool.Compilation;
 
@@ -37,43 +36,21 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
         int Index = 0;
         Parallelization.ForEach(SourceCompileActions, InAction =>
         {
-            DirectoryReference[] HeaderSearchPaths = [
-                .. InInfo.Module.GetHeaderSearchPaths(ETargetPlatform.Any),
-                .. InInfo.Module.GetHeaderSearchPaths(InTargetPlatform.Platform),
-                .. InInfo.Module.GetDependencies(ETargetPlatform.Any).Select(DependencyModule => DependencyModule.SourcesDirectory),
-                .. InInfo.Module.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory)
-            ];
-
-            string[] CompilerDefinitions = CompilerDefinitionsProvider.GetAutomaticCompilerDefinitions(InTargetPlatform, InConfiguration, InInfo.Module);
-
-            CompileCommandInfo CompileCommandInfo = new()
-            {
-                Module = InInfo.Module,
-                SourcesDirectory = InInfo.Module.SourcesDirectory,
-                TargetFile = InAction.SourceFile,
-                DependencyFile = InAction.DependencyFile,
-                ObjectFile = InAction.ObjectFile,
-                HeaderSearchPaths = HeaderSearchPaths,
-                Configuration = InConfiguration,
-                TargetPlatform = InTargetPlatform.Platform,
-                CompilerDefinitions = CompilerDefinitions
-            };
-
             lock (InThreadSafeLock)
             {
                 Console.WriteLine($"Compile [{InInfo.ModuleName}]: {InAction.SourceFile.Name}");
                 if (bPrintCompileCommands)
                 {
-                    string[] CommandLine = InTargetPlatform.Toolchain.GetCompileCommandline(CompileCommandInfo);
+                    string[] CommandLine = InTargetPlatform.Toolchain.GetCompileCommandline(InAction.CompileCommandInfo);
                     Console.WriteLine($"    INFO: {string.Join(' ', CommandLine)}");
                 }
             }
             
-            ProcessResult CompileResult = InTargetPlatform.Toolchain.Compile(CompileCommandInfo);
+            ProcessResult CompileResult = InTargetPlatform.Toolchain.Compile(InAction.CompileCommandInfo);
 
             if (CompileResult.bSuccess)
             {
-                ChecksumStorage.Shared.CompilationSuccess(InAction);
+                ChecksumStorage.Shared.CompilationSuccess(InAction, InTargetPlatform.Toolchain);
             }
             else
             {
@@ -113,13 +90,13 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
         
         Parallelization.ForEach(InSourceCollection.SourceFiles, SourceFile =>
         {
-            CompileAction SourceCompileAction = new(SourceFile, ObjectsDirectory, InToolchain, InSourceCollection);
+            CompileAction SourceCompileAction = new(InInfo.Module, InTargetPlatform, InConfiguration, SourceFile, ObjectsDirectory, InSourceCollection);
 
             lock (InThreadSafeLock)
             {
                 FullCompileActionsList.Add(SourceCompileAction);
 
-                if (SourceCompileAction.bShouldCompile)
+                if (ChecksumStorage.Shared.ShouldRecompile(SourceCompileAction, InToolchain))
                 {
                     FilteredCompileActionList.Add(SourceCompileAction);
                 }
