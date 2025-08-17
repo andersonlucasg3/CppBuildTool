@@ -3,6 +3,10 @@ namespace Shared.Toolchains.Compilers.Apple;
 using Sources;
 using Projects;
 using Compilation;
+using Shared.IO;
+using Shared.Projects.Platforms.Apple;
+using Shared.Extensions;
+
 
 public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACppCompiler
 {
@@ -73,7 +77,14 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             CommandLine.AddRange(ModuleDependencies.Select(Dependency => $"-l{Dependency.Name}"));
         }
 
-        foreach (string Framework in InLinkCommandInfo.Module.PlatformSpecifics.Mac.FrameworkDependencies)
+        ApplePlatformSpecifics Specifics = InLinkCommandInfo.Module.PlatformSpecifics.Get(InLinkCommandInfo.TargetPlatform);
+
+        foreach (DirectoryReference SearchPath in Specifics.FrameworkSearchPaths)
+        {
+            CommandLine.Add($"-F{SearchPath.PlatformPath.Quoted()}");
+        }
+
+        foreach (string Framework in Specifics.FrameworkDependencies)
         {
             CommandLine.Add("-framework");
             CommandLine.Add(Framework);
