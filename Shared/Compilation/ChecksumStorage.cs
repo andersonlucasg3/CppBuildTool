@@ -148,7 +148,14 @@ public class ChecksumStorage
 
         if (ChecksumsFile.bExists)
         {
-            ChecksumsFile.OpenRead(InFileStream => _checksumDataMap = JsonSerializer.Deserialize<Dictionary<string, ChecksumData>>(InFileStream) ?? []);
+            ChecksumsFile.OpenRead(InFileStream =>
+            {
+                try
+                {
+                    _checksumDataMap = JsonSerializer.Deserialize<Dictionary<string, ChecksumData>>(InFileStream) ?? [];
+                }
+                catch { } // do nothing
+            });
         }
     }
 
