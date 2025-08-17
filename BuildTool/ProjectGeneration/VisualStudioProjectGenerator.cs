@@ -27,28 +27,31 @@ public class VisualStudioProjectGenerator(AProjectDefinition InProjectDefinition
         Dictionary<string, AModuleDefinition> Modules = [];
         Modules.AddFrom(InProjectDefinition.GetModules(ETargetPlatform.Any), InProjectDefinition.GetModules(InTargetPlatform.Platform));
 
-        Dictionary<AModuleDefinition, FileReference> ModuleVcxProjFileMap = Modules.Values.ToDictionary(Module => Module, Module => ProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
-
         FileReference SolutionFile = $"{InProjectDefinition.Name}.sln";
-        Solution Solution = GenerateSolutionFile(SolutionFile, CSharpProjects, ModuleVcxProjFileMap);
+        Solution Solution = GenerateSolutionFile(SolutionFile, ProjectsDirectory, CSharpProjects, Modules, out Dictionary<AModuleDefinition, FileReference>? ModuleVcxProjFileMap);
 
-        Parallelization.ForEach([.. Solution.Projects], Project =>
+        if (ModuleVcxProjFileMap is not null)
         {
-            if (!Modules.TryGetValue(Project.ProjectName, out AModuleDefinition? Module)) return;
+            Parallelization.ForEach([.. Solution.Projects], Project =>
+            {
+                if (!Modules.TryGetValue(Project.ProjectName, out AModuleDefinition? Module)) return;
 
-            AModuleDefinition[] ModuleDependencies = [
-                .. Module.GetDependencies(ETargetPlatform.Any),
-                .. Module.GetDependencies(InTargetPlatform.Platform)
-            ];
+                AModuleDefinition[] ModuleDependencies = [
+                    .. Module.GetDependencies(ETargetPlatform.Any),
+                    .. Module.GetDependencies(InTargetPlatform.Platform)
+                ];
 
-            SolutionProject[] Dependencies = [.. ModuleDependencies.Select(DependencyModule => Solution.Projects.First(Project => Project.ProjectName == DependencyModule.Name))];
+                SolutionProject[] Dependencies = [.. ModuleDependencies.Select(DependencyModule => Solution.Projects.First(Project => Project.ProjectName == DependencyModule.Name))];
 
-            GenerateVCXProj(InProjectDefinition.Name, Module, ModuleDependencies, Project, Dependencies, ModuleVcxProjFileMap[Module]);
-        });
+                GenerateVCXProj(InProjectDefinition.Name, Module, ModuleDependencies, Project, Dependencies, ModuleVcxProjFileMap[Module]);
+            });
+        }
     }
 
-    private Solution GenerateSolutionFile(FileReference InSolutionFile, FileReference[] InCSharpProjectFiles, Dictionary<AModuleDefinition, FileReference> InModuleProjectFileMap)
+    private Solution GenerateSolutionFile(FileReference InSolutionFile, DirectoryReference InProjectsDirectory, FileReference[] InCSharpProjectFiles, Dictionary<string, AModuleDefinition> InModules, out Dictionary<AModuleDefinition, FileReference>? OutModuleProjectFileMap)
     {
+        OutModuleProjectFileMap = null;
+
         IndentedStringBuilder StringBuilder = new();
 
         Dictionary<SolutionProject, SolutionProject> NestedProjectsMap = [];
@@ -57,18 +60,26 @@ public class VisualStudioProjectGenerator(AProjectDefinition InProjectDefinition
         SolutionProject[] CSharpProjects = [.. InCSharpProjectFiles.Select(File => new SolutionProject(File.NameWithoutExtension, File.RelativePath, _compileConfigurations, [ETargetPlatform.Any], ESolutionProjectKind.CSharpProject))];
         Array.ForEach(CSharpProjects, Project => NestedProjectsMap.Add(Project, ProgramsFolder));
 
-        SolutionProject ModulesFolder = new("Modules", "Modules", [], [], ESolutionProjectKind.Folder);
-        SolutionProject[] ModulesProjects = [.. InModuleProjectFileMap.Select(KVPair => new SolutionProject(KVPair.Key.Name, KVPair.Value.RelativePath, _compileConfigurations, [InTargetPlatform.Platform]))];
-        Array.ForEach(ModulesProjects, Project => NestedProjectsMap.Add(Project, ModulesFolder));
-
-        SolutionProject[] Projects = [
-            ModulesFolder,
-            .. ModulesProjects,
+        List<SolutionProject> Projects = [
             ProgramsFolder,
             .. CSharpProjects,
         ];
 
-        Solution Solution = new(Projects, NestedProjectsMap);
+        if (AHostPlatform.IsWindows())
+        {
+            OutModuleProjectFileMap = InModules.Values.ToDictionary(Module => Module, Module => InProjectsDirectory.CombineFile($"{Module.Name}.vcxproj"));
+
+            SolutionProject ModulesFolder = new("Modules", "Modules", [], [], ESolutionProjectKind.Folder);
+            SolutionProject[] ModulesProjects = [.. OutModuleProjectFileMap.Select(KVPair => new SolutionProject(KVPair.Key.Name, KVPair.Value.RelativePath, _compileConfigurations, [InTargetPlatform.Platform]))];
+            Array.ForEach(ModulesProjects, Project => NestedProjectsMap.Add(Project, ModulesFolder));
+
+            Projects.AddRange([
+                ModulesFolder,
+                .. ModulesProjects,
+            ]);
+        }
+
+        Solution Solution = new([.. Projects], NestedProjectsMap);
 
         Solution.Build(StringBuilder);
         
