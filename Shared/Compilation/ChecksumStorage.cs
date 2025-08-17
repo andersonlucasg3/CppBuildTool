@@ -40,7 +40,8 @@ public class ChecksumStorage
     private Dictionary<string, ChecksumData> _checksumDataMap = [];
 
     // used to avoid generating header file checksums when already generated 
-    private Dictionary<string, string> _memoryFileChecksumMap = [];
+    private readonly Dictionary<string, string> _memoryFileChecksumMap = [];
+    private readonly Dictionary<string, string> _commandLineChecksumMap = [];
 
     ~ChecksumStorage()
     {
@@ -102,9 +103,9 @@ public class ChecksumStorage
             if (!_checksumDataMap.TryGetValue(RelativePath, out ChecksumData? ChecksumData))
             {
                 _checksumDataMap.Add(RelativePath, ChecksumData = new());
-
-                GenerateChecksums(InAction, InToolchain, out ChecksumData.FileChecksum, out ChecksumData.CommandLineChecksum);
             }
+
+            GenerateChecksums(InAction, InToolchain, out ChecksumData.FileChecksum, out ChecksumData.CommandLineChecksum);
 
             ChecksumData.bCompileSucceeded = true;
 
@@ -165,7 +166,7 @@ public class ChecksumStorage
     private void GenerateChecksums(CompileAction InAction, IToolchain InToolchain, out string OutFileChecksum, out string OutCommandLineChecksum)
     {
         OutFileChecksum = GenerateFileChecksum(InAction.SourceFile);
-        OutCommandLineChecksum = GenerateStringChecksum(string.Join(' ', InToolchain.GetCompileCommandline(InAction.CompileCommandInfo)));
+        OutCommandLineChecksum = GenerateCommandLineChecksum(InToolchain, InAction.CompileCommandInfo);
     }
 
     private string GenerateFileChecksum(FileReference InFile)
@@ -200,17 +201,23 @@ public class ChecksumStorage
         return Checksum;
     }
 
-    private string GenerateStringChecksum(string InString)
+    private string GenerateCommandLineChecksum(IToolchain InToolchain, CompileCommandInfo InCompileCommandInfo)
     {
+        string CommandLineString = string.Join(' ', InToolchain.GetCompileCommandline(InCompileCommandInfo));
+
+        if (_commandLineChecksumMap.TryGetValue(InCompileCommandInfo.TargetFile.RelativePath, out string? CommandLineChecksum))
+        {
+            return CommandLineChecksum;
+        }
+
         bool bGotIt = false;
 
-        string Result = "";
         do
         {
             try
             {
-                byte[] StringBytes = Encoding.UTF8.GetBytes(InString);
-                Result = Convert.ToHexString(_sha.ComputeHash(StringBytes));
+                byte[] StringBytes = Encoding.UTF8.GetBytes(CommandLineString);
+                CommandLineChecksum = Convert.ToHexString(_sha.ComputeHash(StringBytes));
                 bGotIt = true;
             }
             catch
@@ -220,6 +227,8 @@ public class ChecksumStorage
         }
         while (!bGotIt);
 
-        return Result;
+        _commandLineChecksumMap.Add(InCompileCommandInfo.TargetFile.RelativePath, CommandLineChecksum!);
+
+        return CommandLineChecksum!;
     }
 }

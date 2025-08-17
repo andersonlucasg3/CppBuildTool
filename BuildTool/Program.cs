@@ -3,6 +3,7 @@ using Shared.Projects;
 using Shared.Commands;
 using Shared.Processes;
 using Shared.CommandLines;
+using BuildTool.Compilation.Commands;
 
 IExecutableCommand? ExecutingCommand = null;
 CommandLine? CommandLine = null;
@@ -60,13 +61,19 @@ catch (MissingCommandException)
     {
         Console.WriteLine($"    {Command.Name} {Command.Example}");
     }
-    
+
     Environment.ExitCode = -1;
 }
 catch (ProjectNotFoundException Ex)
 {
     Console.WriteLine($"Project not found: {Ex.Message}");
-    
+
+    Environment.ExitCode = -1;
+}
+catch (TargetPlatformNotSupportedException Ex)
+{
+    Console.WriteLine(Ex.Message);
+
     Environment.ExitCode = -1;
 }
 

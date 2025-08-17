@@ -35,7 +35,7 @@ public class Clean : IExecutableCommand
         AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
         
         AHostPlatform HostPlatform = AHostPlatform.GetHost();
-        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
+        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(HostPlatform, CompilePlatform);
         
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
 

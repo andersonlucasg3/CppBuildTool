@@ -97,7 +97,9 @@ public class AndroidToolchain : AClangToolchain
 
     public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)
     {
-        List<string> CompilerDefinitions = [];
+        List<string> CompilerDefinitions = [
+            $"ANDROID_PLATFORM=android-{MinimumSupportedAndroidNdkVersion}",
+        ];
 
         CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=");
 

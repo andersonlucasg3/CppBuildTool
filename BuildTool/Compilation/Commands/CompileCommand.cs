@@ -45,7 +45,7 @@ public class Compile : IExecutableCommand
         AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
 
         AHostPlatform HostPlatform = AHostPlatform.GetHost();
-        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(PlatformString);
+        if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(HostPlatform, CompilePlatform);
 
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
 
@@ -144,4 +144,4 @@ public class Compile : IExecutableCommand
     }
 }
 
-public class TargetPlatformNotSupportedException(string InMessage) : ABaseException(InMessage);
+public class TargetPlatformNotSupportedException(AHostPlatform InHostPlatform, ETargetPlatform InTargetPlatform) : ABaseException($"Target platform {InTargetPlatform} not supported on host {InHostPlatform.Name}");
