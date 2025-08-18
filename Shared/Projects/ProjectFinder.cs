@@ -33,7 +33,11 @@ public static class ProjectFinder
             .. RootProjectDirectory.EnumerateFiles("*.Module.cs", SearchOption.AllDirectories),
         ];
 
-        Dictionary<string, FileReference> ProjectsNameSourcesMap = ProjectsSources.ToDictionary(Each => Each.NameWithoutExtension.Replace(".", ""));
+        Dictionary<string, FileReference> ProjectsNameSourcesMap = [];
+        foreach (FileReference ProjectSource in ProjectsSources)
+        {
+            ProjectsNameSourcesMap.TryAdd(ProjectSource.NameWithoutExtension.Replace(".", ""), ProjectSource);
+        }
 
         FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"{InProjectName}.csproj");
         IndentedStringBuilder StringBuilder = new();
