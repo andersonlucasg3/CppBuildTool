@@ -15,31 +15,29 @@ public static class ProjectFinder
 
     private static readonly Dictionary<string, AProjectDefinition> _loadedProjectsByName = [];
     private static readonly Dictionary<Type, AProjectDefinition> _loadedProjectsByType = [];
+    private static readonly Dictionary<string, FileReference> _projectNameSourceMap = [];
 
     public static void CreateAndCompileProject(DirectoryReference InProjectRootDirectory, string InProjectName)
     {
-        DirectoryReference IntermediateBinariesDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "CSharpBinaries");
-        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine(InProjectName, "Intermediate", "Projects");
+        DirectoryReference IntermediateBinariesDirectory = InProjectRootDirectory.Combine("Intermediate", "CSharpBinaries");
+        DirectoryReference IntermediateProjectsDirectory = InProjectRootDirectory.Combine("Intermediate", "Projects");
 
         if (!IntermediateBinariesDirectory.bExists) IntermediateBinariesDirectory.Create();
         if (!IntermediateProjectsDirectory.bExists) IntermediateProjectsDirectory.Create();
 
-        DirectoryReference RootProjectDirectory = InProjectRootDirectory.Combine(InProjectName);
-
-        FileReference[] ProjectsSources = RootProjectDirectory.EnumerateFiles("*.Project.cs", SearchOption.AllDirectories);
+        FileReference[] ProjectsSources = InProjectRootDirectory.EnumerateFiles("*.Project.cs", SearchOption.AllDirectories);
 
         FileReference[] AllCSharpSources = [
             .. ProjectsSources,
-            .. RootProjectDirectory.EnumerateFiles("*.Module.cs", SearchOption.AllDirectories),
+            .. InProjectRootDirectory.EnumerateFiles("*.Module.cs", SearchOption.AllDirectories),
         ];
 
-        Dictionary<string, FileReference> ProjectsNameSourcesMap = [];
         foreach (FileReference ProjectSource in ProjectsSources)
         {
-            ProjectsNameSourcesMap.TryAdd(ProjectSource.NameWithoutExtension.Replace(".", ""), ProjectSource);
+            _projectNameSourceMap.TryAdd(ProjectSource.NameWithoutExtension.Replace(".", ""), ProjectSource);
         }
 
-        FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"{InProjectName}.csproj");
+        FileReference InCSharpProjectFile = IntermediateProjectsDirectory.CombineFile($"Projects.csproj");
         IndentedStringBuilder StringBuilder = new();
         CSharpProject CSharpProject = new(InProjectRootDirectory, AllCSharpSources);
         CSharpProject.Build(StringBuilder);
@@ -74,6 +72,8 @@ public static class ProjectFinder
             Type[] Types = ProjectAssembly.GetTypes();
             Type[] ProjectTypes = [.. Types.Where(Type => Type.IsClass && !Type.IsAbstract && Type.IsSubclassOf(typeof(AProjectDefinition)))];
 
+            if (ProjectTypes.Length == 0) continue;
+
             foreach (Type ProjectType in ProjectTypes)
             {
                 if (Activator.CreateInstance(ProjectType) is not AProjectDefinition Project)
@@ -85,8 +85,6 @@ public static class ProjectFinder
                 {
                     throw new FailedToCreateProjectInstanceException($"Project type already created: {ProjectType.Name}");
                 }
-
-                Project.Configure(ProjectsNameSourcesMap[Project.GetType().Name].Directory);
             }
         }
     }
@@ -101,6 +99,8 @@ public static class ProjectFinder
             throw new ProjectNotFoundException($"Missing project {ProjectType.Name}");
         }
 
+        Project.Configure(_projectNameSourceMap[ProjectType.Name].Directory);
+
         return (TProject)Project;
     }
 
@@ -110,6 +110,8 @@ public static class ProjectFinder
         {
             throw new ProjectNotFoundException($"Missing project {InProjectName}");
         }
+
+        Project.Configure(_projectNameSourceMap[Project.GetType().Name].Directory);
 
         return Project;
     }

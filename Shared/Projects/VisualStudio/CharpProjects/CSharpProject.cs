@@ -43,7 +43,7 @@ public class CSharpProject(DirectoryReference InProjectRoot, FileReference[] InS
     class ProjectReference(DirectoryReference InProjectRoot) : ATag
     {
         protected override Parameter[] Parameters => [
-            new Parameter("Include", InProjectRoot.CombineFile("Programs", "DotNet", "ProjectTools", "Shared", "Shared.csproj").PlatformPath)
+            new Parameter("Include", InProjectRoot.CombineFile("ProjectTools", "Shared", "Shared.csproj").PlatformPath)
         ];
     }
 
