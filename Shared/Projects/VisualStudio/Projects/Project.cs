@@ -66,8 +66,8 @@ public class Project : TTagGroup<IIndentedStringBuildable>
                 ItemDefinitionGroup NewItemGroup = new(
                     InProjectDependencies.PreprocessorDefinitions,
                     [
-                        InProjectDependencies.ProjectSourcesDirectory.RelativePath,
-                        .. InProjectDependencies.DependenciesSourcesDirectories.Select(DependencySourceDirectory => DependencySourceDirectory.RelativePath)
+                        InProjectDependencies.ProjectSourcesDirectory,
+                        .. InProjectDependencies.DependenciesSourcesDirectories
                     ],
                     Configuration,
                     Platform);

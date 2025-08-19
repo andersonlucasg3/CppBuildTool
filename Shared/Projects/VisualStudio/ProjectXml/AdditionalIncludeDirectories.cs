@@ -2,4 +2,4 @@
 
 namespace Shared.Projects.VisualStudio.ProjectXml;
 
-public class AdditionalIncludeDirectories(DirectoryReference InIncludeDirectory) : ATag($"$(SolutionDir){InIncludeDirectory.RelativePath};%({nameof(AdditionalIncludeDirectories)})");
+public class AdditionalIncludeDirectories(DirectoryReference InIncludeDirectory) : ATag($"{InIncludeDirectory.PlatformPath};%({nameof(AdditionalIncludeDirectories)})");

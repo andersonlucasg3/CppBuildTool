@@ -3,13 +3,11 @@
 using namespace System.Collections.Generic
 
 param(
-    [Parameter(Mandatory = $true)]
     [string] $Project,
 
     [Parameter()]
     [string[]] $Modules,
 
-    [Parameter(Mandatory = $true)]
     [ValidateSet(
         "iOS",
         "tvOS",
