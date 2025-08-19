@@ -55,11 +55,12 @@ public class ProjectDirectories
         return ConfigurationDirectory;
     }
 
-    public DirectoryReference CreateBaseDirectory(ECompileBaseDirectory InBaseDirectory, bool bCreate = true)
+    public static DirectoryReference CreateBaseDirectory(ECompileBaseDirectory InBaseDirectory, bool bCreate = true)
     {
         string Name = InBaseDirectory.ToString();
 
-        DirectoryReference IntermediateDirectory = _inProjectDefinition.RootDirectory.Combine(Name);
+        DirectoryReference RootDirectory = Environment.CurrentDirectory;
+        DirectoryReference IntermediateDirectory = RootDirectory.Combine(Name);
         if (bCreate && !IntermediateDirectory.bExists) IntermediateDirectory.Create();
 
         return IntermediateDirectory;

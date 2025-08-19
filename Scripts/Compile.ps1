@@ -36,7 +36,7 @@ param(
 
 . $PSScriptRoot/Commons.ps1
 
-CompileProjectTools -ProjectName $Project
+CompileProjectTools
 
 if (-not $?)
 {
@@ -69,6 +69,6 @@ AddSwitch ([ref]$Arguments) "Recompile" $Recompile
 AddSwitch ([ref]$Arguments) "PrintCompileCommands" $PrintCompileCommands
 AddSwitch ([ref]$Arguments) "PrintLinkCommands" $PrintLinkCommands
 
-dotnet exec ./$Project/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
 
 Exit $LASTEXITCODE

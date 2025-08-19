@@ -35,7 +35,7 @@ param(
 
 . $PSScriptRoot/Commons.ps1
 
-CompileProjectTools -ProjectName $Project
+CompileProjectTools
 
 if (-not $?)
 {
@@ -52,6 +52,6 @@ AddArgument ([ref]$Arguments) "Platform" $Platform
 AddArgument ([ref]$Arguments) "Configuration" $Configuration
 AddSwitch ([ref]$Arguments) "DisableMT" $true
 
-dotnet exec ./$Project/Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
 
 Exit $LASTEXITCODE
