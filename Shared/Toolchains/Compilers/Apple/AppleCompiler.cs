@@ -22,10 +22,6 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             "-MMD",
             "-MF",
             InCompileCommandInfo.DependencyFile.PlatformPath,
-            "-c",
-            InCompileCommandInfo.TargetFile.PlatformPath,
-            "-o",
-            InCompileCommandInfo.ObjectFile.PlatformPath,
             $"-I{InCompileCommandInfo.SourcesDirectory}",
             .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory}"),
             "-fPIC",
@@ -39,6 +35,10 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             InTargetOSVersionMin,
             "-isysroot",
             InSdkPath,
+            "-c",
+            InCompileCommandInfo.TargetFile.PlatformPath,
+            "-o",
+            InCompileCommandInfo.ObjectFile.PlatformPath,
         ];
     }
 
