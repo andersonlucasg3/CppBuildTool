@@ -6,33 +6,19 @@ public static class Parallelization
     {
         if (InSourceArray.Length == 0) return;
 
-        ThreadWorker.ExecuteOnExclusiveThread(() =>
+        ThreadWorker.ExecuteOnExclusiveThread(Info =>
         {
-            Lock Locker = new();
-
-            int Count = InSourceArray.Length;
-
             foreach (T Element in InSourceArray)
             {
                 ThreadWorker.Execute(() =>
                 {
                     Action.Invoke(Element);
 
-                    lock (Locker) Count--;
+                    Info?.Release();
                 });
             }
 
-            bool bRelease = false;
-            do
-            {
-                Thread.Sleep(1);
-
-                lock (Locker)
-                {
-                    bRelease = Count == 0;
-                }
-            }
-            while (!bRelease);
+            Info?.Wait(InSourceArray.Length);
         });
     }
 }

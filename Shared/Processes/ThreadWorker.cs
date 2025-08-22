@@ -1,23 +1,34 @@
 ﻿namespace Shared.Processes;
 
-class ThreadInfo(Thread InThread)
+public class ThreadInfo(Thread? InThread, bool InTemporary = false)
 {
     private readonly Lock _lock = new();
     private int _count = 0;
 
-    public readonly Thread Thread = InThread;
+    public readonly Thread? Thread = InThread;
+    public bool bTemporary => InTemporary;
+
+    public ThreadInfo() : this(null)
+    {
+        //
+    }
 
     ~ThreadInfo()
     {
         Release();
     }
 
-    public void Wait()
+    public void Add(int InCount)
     {
-        lock (_lock)
+         lock (_lock)
         {
-            _count += 1;
+            _count += InCount;
         }
+    }
+
+    public void Wait(int InWaitCount = 1)
+    {
+        Add(InWaitCount);
 
         int Count;
         do
@@ -36,7 +47,7 @@ class ThreadInfo(Thread InThread)
     {
         lock (_lock)
         {
-            _count = Math.Max(0, _count - 1);
+            _count -= 1;
         }
     }
 }
@@ -70,7 +81,11 @@ class ActionInfo<T> : IActionInfo
 public static class ThreadWorker
 {
     private static readonly Lock _threadLock = new();
-    private static readonly Thread _mainWorkerThread = new(ThreadWorkerRunner);
+    private static readonly Thread _mainWorkerThread = new(ThreadWorkerRunner)
+    {
+        Name = "MainThreadWorker",
+        IsBackground = true,
+    };
 
     private static readonly Queue<ThreadInfo> _availableThreads = [];
     private static readonly Dictionary<Thread, ThreadInfo> _threadInfoMap = [];
@@ -91,7 +106,6 @@ public static class ThreadWorker
     {
         _preallocatedThreadCount = Math.Max(1, InThreadCount);
 
-        _mainWorkerThread.Name = "MainThreadWorker";
         _mainWorkerThread.Start();
 
         int Count = Math.Max(1, InThreadCount);
@@ -109,7 +123,7 @@ public static class ThreadWorker
         }
 
         ThreadInfo[] ThreadInfos;
-        lock (_threadLock) 
+        lock (_threadLock)
         {
             _shouldKeepRunning = false;
 
@@ -119,7 +133,7 @@ public static class ThreadWorker
         foreach (ThreadInfo ThreadInfo in ThreadInfos)
         {
             ThreadInfo.Release();
-            ThreadInfo.Thread.Join();
+            ThreadInfo.Thread?.Join();
         }
 
         _mainWorkerThread.Join();
@@ -139,6 +153,12 @@ public static class ThreadWorker
             {
                 Action = Action
             });
+
+            if (_threadInfoMap.Count >= _preallocatedThreadCount)
+            {
+                // create and let it work
+                CreateNewWorkerThread(false).Release();
+            }
         }
     }
 
@@ -157,27 +177,40 @@ public static class ThreadWorker
                 Action = InAction,
                 Object = InObject
             });
+
+            if (_threadInfoMap.Count >= _preallocatedThreadCount)
+            {
+                // create and let it work
+                CreateNewWorkerThread(false).Release();
+            }
         }
     }
 
-    public static void ExecuteOnExclusiveThread(Action InAction)
+    public static void ExecuteOnExclusiveThread(Action<ThreadInfo?> InAction)
     {
         if (_bIsSingleThreaded)
         {
-            InAction.Invoke();
+            InAction.Invoke(null);
             return;
         }
-        
-        Thread ExclusiveThread = new(InAction.Invoke)
+
+        Action<object?> ThreadAction = Obj =>
         {
-            Name = "ThreadWorkerOnce",
-            IsBackground = true,
+            ThreadInfo? Info = Obj as ThreadInfo;
+            InAction.Invoke(Info);
         };
-        ExclusiveThread.Start();
-        ExclusiveThread.Join();
+
+        ThreadInfo ExecuteOnceInfo = new(new Thread(ThreadAction.Invoke)
+        {
+            Name = "ThreadOnce",
+            IsBackground = true,
+        });
+
+        ExecuteOnceInfo.Thread?.Start(ExecuteOnceInfo);
+        ExecuteOnceInfo.Thread?.Join();
     }
 
-    private static void CreateNewWorkerThread()
+    private static ThreadInfo CreateNewWorkerThread(bool bTemporary = false)
     {
         lock (_threadLock)
         {
@@ -185,11 +218,18 @@ public static class ThreadWorker
             {
                 Name = "ThreadWorker",
                 IsBackground = true,
-            });
-            _availableThreads.Enqueue(NewThreadInfo);
-            _threadInfoMap.Add(NewThreadInfo.Thread, NewThreadInfo);
+            }, bTemporary);
 
-            NewThreadInfo.Thread.Start();
+            if (!bTemporary)
+            {
+                _availableThreads.Enqueue(NewThreadInfo);
+            }
+
+            _threadInfoMap.Add(NewThreadInfo.Thread!, NewThreadInfo);
+
+            NewThreadInfo.Thread!.Start();
+
+            return NewThreadInfo;
         }
     }
 
@@ -227,24 +267,29 @@ public static class ThreadWorker
         bool bShouldKeepRunning = true;
         do
         {
-            if (!_threadInfoMap.TryGetValue(Thread.CurrentThread, out ThreadInfo? ThreadInfo))
+            if (!_threadInfoMap.TryGetValue(Thread.CurrentThread, out ThreadInfo? Info))
             {
                 Thread.Sleep(1);
 
                 continue;
             }
 
-            ThreadInfo.Wait();
+            Info.Wait();
 
             ExecuteAction();
+
+            if (Info.bTemporary)
+            {
+                return;
+            }
 
             lock (_threadLock)
             {
                 bShouldKeepRunning = _shouldKeepRunning;
 
-                if (_shouldKeepRunning)
+                if (bShouldKeepRunning)
                 {
-                    _availableThreads.Enqueue(ThreadInfo);
+                    _availableThreads.Enqueue(Info);
                 }
             }
         }
