@@ -29,7 +29,9 @@ param(
         "Debug",
         "Release"
     )]
-    [string] $Configuration = "Debug"
+    [string] $Configuration = "Debug",
+
+    [switch] $DisableMT = $false
 )
 
 
@@ -50,7 +52,7 @@ AddArgument ([ref]$Arguments) "Generator" $Generator
 AddArgument ([ref]$Arguments) "Modules" $Modules
 AddArgument ([ref]$Arguments) "Platform" $Platform
 AddArgument ([ref]$Arguments) "Configuration" $Configuration
-AddSwitch ([ref]$Arguments) "DisableMT" $true
+AddSwitch ([ref]$Arguments) "DisableMT" $DisableMT
 
 dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
 
