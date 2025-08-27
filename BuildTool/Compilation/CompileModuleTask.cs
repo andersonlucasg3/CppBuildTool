@@ -22,7 +22,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
         {
             Console.WriteLine($"Nothing to compile, module {InInfo.ModuleName} is up to date.");
 
-            InInfo.Result = ECompilationResult.NothingToCompile;
+            InInfo.CompileResult = ECompilationResult.NothingToCompile;
             
             return;
         }
@@ -76,7 +76,10 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
             }
         });
 
-        InInfo.Result = bCompilationSuccessful ? ECompilationResult.CompilationSuccess : ECompilationResult.CompilationFailed;
+        lock (InThreadSafeLock)
+        {
+            InInfo.CompileResult = bCompilationSuccessful ? ECompilationResult.CompilationSuccess : ECompilationResult.CompilationFailed;
+        }
     }
 
     private CompileAction[] GenerateCompileActions(IToolchain InToolchain, ISourceCollection InSourceCollection, out CompileAction[] OutCompileActions)

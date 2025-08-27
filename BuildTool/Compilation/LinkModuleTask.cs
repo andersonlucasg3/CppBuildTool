@@ -1,3 +1,4 @@
+using System.Runtime.Loader;
 using Shared.Compilation;
 using Shared.IO;
 using Shared.Platforms;
@@ -13,50 +14,108 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, A
 
     public void Link(Dictionary<AModuleDefinition, CompileModuleInfo> ModuleCompilationResultMap, bool bPrintLinkCommands)
     {
-        if (InInfo.Result is ECompilationResult.NothingToCompile && InInfo.Link.LinkedFile.bExists)
-        {
-            Console.WriteLine($"Link [{InInfo.Module.Name}]: Up to date");
+        AModuleDefinition[] Dependencies = [
+            .. InInfo.Module.GetDependencies(InTargetPlatform.Platform),
+            .. InInfo.Module.GetDependencies(ETargetPlatform.Any),
+        ];
 
-            InInfo.Result = ECompilationResult.LinkUpToDate;
-
-            return;
-        }
-
-        bool bCanLink;
+        bool bPendingResults = true;
         do
         {
-            AModuleDefinition[] Dependencies = [
-                .. InInfo.Module.GetDependencies(InTargetPlatform.Platform),
-                .. InInfo.Module.GetDependencies(ETargetPlatform.Any),
-            ];
+            Thread.Sleep(1);
+
+            bool bAnyDependencyWaiting = Dependencies.Any(DependencyModule =>
+            {
+                CompileModuleInfo ModuleInfo = ModuleCompilationResultMap[DependencyModule];
+                lock (InThreadSafeLock) return ModuleInfo.CompileResult is ECompilationResult.Waiting && ModuleInfo.LinkResult is ELinkageResult.Waiting;
+            });
+
+            bool bStillCompiling = true;
+            lock (InThreadSafeLock) bStillCompiling = InInfo.CompileResult is ECompilationResult.Waiting;
+
+            bPendingResults = bAnyDependencyWaiting || bStillCompiling;
+        }
+        while (bPendingResults);
+
+        bool bCanLink = false;
+        do
+        {
+            
+
+            if (bAnyDependencyWaiting)
+            {
+                Thread.Sleep(1);
+
+                continue;
+            }
+            
+            bool bAllDependenciesUpToDate = Dependencies.All(DependencyModule =>
+            {
+                CompileModuleInfo ModuleInfo = ModuleCompilationResultMap[DependencyModule];
+                lock (InThreadSafeLock) return ModuleInfo.CompileResult is ECompilationResult.NothingToCompile && ModuleInfo.LinkResult is ELinkageResult.LinkUpToDate;
+            });
+
+            bool bAnyDependenciesLinked = Dependencies.Any(DependencyModule =>
+            {
+                CompileModuleInfo ModuleInfo = ModuleCompilationResultMap[DependencyModule];
+                lock (InThreadSafeLock) return ModuleInfo.CompileResult is ECompilationResult.NothingToCompile && ModuleInfo.LinkResult is ELinkageResult.LinkSuccess;
+            });
+
+            bool bSelfUpToDate = false;
+            bool bSelfCompilationFailure = false;
+            lock (InThreadSafeLock)
+            {
+                bSelfUpToDate = InInfo.CompileResult is ECompilationResult.NothingToCompile;
+                bSelfCompilationFailure = InInfo.CompileResult is ECompilationResult.CompilationFailed;
+            }
+
+            if (bAllDependenciesUpToDate && bSelfUpToDate && InInfo.Link.LinkedFile.bExists)
+            {
+                Console.WriteLine($"Link [{InInfo.Module.Name}]: Up to date");
+
+                lock (InThreadSafeLock) InInfo.LinkResult = ELinkageResult.LinkUpToDate;
+
+                return;
+            }
+            else if (bSelfCompilationFailure)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Link [{InInfo.Module.Name}]: Skipped due to dependency failure");
+
+                lock (InThreadSafeLock) InInfo.LinkResult = ELinkageResult.LinkFailed;
+
+                return;
+            }
 
             bool bAnyDependencyFailed = Dependencies.Any(DependencyModule =>
             {
-                ECompilationResult Result = ModuleCompilationResultMap[DependencyModule].Result;
-                return Result == ECompilationResult.LinkFailed || Result == ECompilationResult.CompilationFailed;
-            });
-
-            bool bAllDependenciesSucceeded = Dependencies.All(DependencyModule =>
-            {
-                ECompilationResult Result = ModuleCompilationResultMap[DependencyModule].Result;
-                return Result is ECompilationResult.LinkSuccess or ECompilationResult.LinkUpToDate;
+                CompileModuleInfo ModuleInfo = ModuleCompilationResultMap[DependencyModule];
+                lock (InThreadSafeLock) return ModuleInfo.CompileResult is ECompilationResult.CompilationFailed || ModuleInfo.LinkResult is ELinkageResult.LinkFailed;
             });
 
             if (bAnyDependencyFailed)
             {
-                lock (InThreadSafeLock)
-                {
-                    InInfo.Result = ECompilationResult.LinkFailed;
-                }
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Link [{InInfo.Module.Name}]: Skipped due to dependency failure");
+
+                lock (InThreadSafeLock) InInfo.LinkResult = ELinkageResult.LinkFailed;
 
                 return;
             }
-            
+
+            bool bAllDependenciesSucceeded = Dependencies.All(DependencyModule =>
+            {
+                CompileModuleInfo ModuleInfo = ModuleCompilationResultMap[DependencyModule];
+                lock (InThreadSafeLock) return ModuleInfo.CompileResult is ECompilationResult.NothingToCompile or ECompilationResult.CompilationSuccess && ModuleInfo.LinkResult is ELinkageResult.LinkUpToDate or ELinkageResult.LinkSuccess;
+            });
+
             bCanLink = bAllDependenciesSucceeded;
-            
+
             Thread.Sleep(1);
         } 
         while (!bCanLink);
+
+        Console.ResetColor();
 
         FileReference[] ObjectFiles = [.. InInfo.CompileActions.Select(Action => Action.ObjectFile)];
 
@@ -95,13 +154,13 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, A
         {
             if (LinkResult.bSuccess)
             {
-                InInfo.Result = ECompilationResult.LinkSuccess;
+                InInfo.LinkResult = ELinkageResult.LinkSuccess;
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Link [{InInfo.ModuleName}]: {InInfo.Link.LinkedFile.Name}");
             }
             else
             {
-                InInfo.Result = ECompilationResult.LinkFailed;
+                InInfo.LinkResult = ELinkageResult.LinkFailed;
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Link [{InInfo.ModuleName}]: {InInfo.Link.LinkedFile.Name}{Environment.NewLine}{LinkResult.StandardError}");
             }

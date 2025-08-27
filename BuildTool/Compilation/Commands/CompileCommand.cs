@@ -119,10 +119,15 @@ public class Compile : IExecutableCommand
 
             CompileModuleInfo Info = ModuleCompilationResultMap[ModuleInfo.Module];
 
-            bSuccess &= Info.Result is ECompilationResult.CompilationSuccess or ECompilationResult.NothingToCompile;
-
             LinkModuleTask LinkTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration);
             LinkTask.Link(ModuleCompilationResultMap, bPrintLinkCommands);
+
+            lock (_threadSafeLock)
+            {
+                bSuccess &=
+                    Info.CompileResult is ECompilationResult.NothingToCompile or ECompilationResult.CompilationSuccess &&
+                    Info.LinkResult is ELinkageResult.LinkUpToDate or ELinkageResult.LinkSuccess;
+            }
         });
 
         ChecksumStorage.Shared.SaveChecksums(TargetPlatform.Platform, CompileConfiguration);
